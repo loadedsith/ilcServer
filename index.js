@@ -24,6 +24,12 @@ server.get(/.*/, restify.serveStatic({
 
 var users = [];
 
+var appSecret;
+
+var array = fs.readFileSync(__dirname+"/fbAppSecret").toString().split("\n");
+
+appSecret = array[0];
+
 var pipeFirebaseToSocket = function(user, socket) {
   var testRef = new firebase(firebaseUrl + "/rooms/")
   testRef.on('child_added', function(child) {
@@ -40,7 +46,6 @@ io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
   socket.on('loginValidator', function(id) {
     var appId = "676670295780686";
-    var appSecret = "e6174f8fac17929ccba20347ab8b5f9f";
     var appAccessToken = appId + "|" + appSecret;
     
     //https://graph.facebook.com/debug_token?input_token={id}&access_token={appAccessToken}
