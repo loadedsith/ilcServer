@@ -1,0 +1,10 @@
+{
+  "name": "ilcServer",
+  "version": "0.0.1",
+  "dependencies": {
+    "topcoat": "0.8.0",
+    "angular": "1.3.x",
+    "angular-ui-router": "0.2.x"
+  },
+  "devDependencies": {}
+}
