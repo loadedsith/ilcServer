@@ -8,12 +8,14 @@ var fb = require('fb');
 
 var firebase = require('firebase');
 
-var firebaseUrl = 'https://resplendent-fire-9421.firebaseIO.com';
+var firebaseUrl;
+var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
+firebaseUrl = firebaseUrlFile[0];
 
 var tokensByUserId = {};
 
 var server = restify.createServer({
-  name: "ilcServer"
+  name: 'ilcServer'
 });
 
 var io = socketio.listen(server);
@@ -28,50 +30,51 @@ var users = [];
 
 var appSecret;
 
-var fbAppSecretFile = fs.readFileSync(__dirname+"/fbAppSecret").toString().split("\n");
+var fbAppSecretFile = fs.readFileSync(__dirname + '/fbAppSecret').toString().split('\n');
 appSecret = fbAppSecretFile[0];
 
-var roomsRef = new firebase(firebaseUrl + "/rooms/");
+var roomsRef = new firebase(firebaseUrl + '/rooms/');
 
-var usersRef = new firebase(firebaseUrl + "/users/");
+var usersRef = new firebase(firebaseUrl + '/users/');
+
+var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
+  roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('value', function(rooms) {
+    socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
+    roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('child_added', function(child) {
+      socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
+    });
+  });
+};
 
 var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
-  roomsRef = new firebase(firebaseUrl + "/rooms/");
+  roomsRef = new firebase(firebaseUrl + '/rooms/');
   if (user.rooms !== undefined) {
     for (var roomKey in user.rooms) {
       var room = user.rooms[roomKey];
 
       var roomName;
-      if(parseInt(userId) > parseInt(room)){
-        roomName = String(room + "+" + userId);
-      }else{
-        roomName = String(userId + "+" + room);
+      if (parseInt(userId) > parseInt(room)) {
+        roomName = String(room + '+' + userId);
+      } else {
+        roomName = String(userId + '+' + room);
       }
-      
-      (function(roomName, userId) {
-        roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('value', function(rooms) {
-          socket.emit('room set', {"room":roomName,"snapshot":rooms.val()});
-          roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('child_added', function(child) {
-            socket.emit('room update', {"room":roomName,"snapshot":child.val()});
-          });
-        });
-      })(roomName, userId);
-      
+
+      createRoomEmitsForUserOnSocket(roomName, userId, socket);
+
     }
-  }else{
+  } else {
     user.rooms = {};
   }
-  
-  
+
   socket.emit('rooms set', user.rooms);
-  
-  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+"_").on('child_added', function(child) {
+
+  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+'_').on('child_added', function(child) {
   //   console.log('child', child.val());
   //   socket.emit('rooms update', child.val());
   // });
-  // 
-  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+"_").on('value',function(rooms) {
+  //
+  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+'_').on('value', function(rooms) {
   //   console.log('rooms for String(userId)', rooms.val(), String(userId));
   //   socket.emit('rooms set', rooms.val());
   // });
@@ -79,145 +82,145 @@ var pipeFirebaseToSocket = function(user, socket) {
 };
 
 var openFirebaseRoomForUsers = function(users, socket) {
-  if (users.localId !== undefined && users.remoteId !== undefined){
+  if (users.localId !== undefined && users.remoteId !== undefined) {
     var key;
-    
-    if(users.localId > users.remoteId){
-      key = users.remoteId + "+" + users.localId
-    }else{
-      key = users.localId + "+" + users.remoteId
+
+    if (users.localId > users.remoteId) {
+      key = users.remoteId + '+' + users.localId;
+    } else {
+      key = users.localId + '+' + users.remoteId;
     }
-    
+
     emptyRoom = [
       {
-        "type": "timeStamp",
-        "time": new Date().getTime()
+        'type': 'timeStamp',
+        'time': new Date().getTime()
       }
     ];
-    
+
     roomsRef.child(key).set(emptyRoom);
-    
+
     userRef = usersRef.child(users.localId);
-    
-    userRef.child("rooms").push(String(users.remoteId), function(error) {
-      if(error !== null){
+
+    userRef.child('rooms').push(String(users.remoteId), function(error) {
+      if (error !== null) {
         console.log('error pushing room', error);
       }
     });
-    roomsRef.child(key).on('value',function(snapshot) {
+
+    roomsRef.child(key).on('value', function(snapshot) {
       socket.emit('rooms update', {
-        "remoteId":users.remoteId,
-        "snapshot":snapshot.val()
+        'remoteId':users.remoteId,
+        'snapshot':snapshot.val()
       });
-      
-    })
-    
-  }else{
-    console.log('couldnt create room, please provide a object with properties localId and remoteId, got: ',users);
+    });
+
+  } else {
+    console.log('couldnt create room, please provide a object with properties localId and remoteId, got: ', users);
   }
 };
 
 var facebookTokenValid = function(accessToken, callback) {
-  var appId = "676670295780686";
-  var appAccessToken = appId + "|" + appSecret;
-  
+  var appId = '676670295780686';
+  var appAccessToken = appId + '|' + appSecret;
+
   //https://graph.facebook.com/debug_token?input_token={id}&access_token={appAccessToken}
   var resource = 'debug_token?input_token=' + accessToken + '&access_token=' + appAccessToken;
-  for(var cachedUserResponseKey in tokensByUserId){
+  for (var cachedUserResponseKey in tokensByUserId) {
     var cachedUserResponse = tokensByUserId[cachedUserResponseKey];
     var now = new Date().getTime();
     now = now / 1000;
-    if (cachedUserResponse.data.expires_at > now){
-      if (typeof callback === 'function'){
+    if (cachedUserResponse.data['expires_at'] > now) {
+      if (typeof callback === 'function') {
         callback(cachedUserResponse);
       }
       console.log('Access key was still valid according to Facebook, using cached authority.');
       return;
     }
-  };
-  fb.api(resource, function (response) {
+  }
+  fb.api(resource, function(response) {
     if (response.data !== undefined) {
       if (response.data['is_valid'] === true) {
         response.data.setTime = new Date().getTime();
         console.log('response', response);
-        tokensByUserId[response.data["user_id"]]=response;
-        if (typeof callback === 'function'){
+        tokensByUserId[response.data['user_id']] = response;
+        if (typeof callback === 'function') {
           callback(response);
         }
-      }else{
+      } else {
         console.log('response.is_valid is not true', response);
       }
-    }else{
+    } else {
       console.log('response.data is missing', response);
     }
-  })
+  });
 };
 
 var updateUser = function(user, socket) {
-  userRef = usersRef.child(user.data["user_id"]);
-  userRef.on('value',function(snapshot) {
+  userRef = usersRef.child(user.data['user_id']);
+  userRef.on('value', function(snapshot) {
     var value = snapshot.val();
     var u = {
-      userId: user.data["user_id"],
+      userId: user.data['user_id'],
       ref: userRef,
       rooms:[]
-    }
-    if(value.rooms !== undefined){
-      for(var room in value.rooms){
+    };
+    if (value.rooms !== undefined) {
+      for (var room in value.rooms) {
         u.rooms.push(value.rooms[room]);
       }
     }
     pipeFirebaseToSocket(u, socket);
-  })
-}
+  });
+};
 var getUserProfile = function(user, socket) {
-  console.log('looking for ' + user.data["user_id"] + ' profile');
-  usersRef.child(user.data["user_id"]).once('value',function(snapshot) {
-    socket.emit('user profile', snapshot.val().profile||{})
+  console.log('looking for ' + user.data['user_id'] + ' profile');
+  usersRef.child(user.data['user_id']).once('value', function(snapshot) {
+    socket.emit('user profile', snapshot.val().profile || {});
   });
 };
 
-var setUserProfile = function(user, profile,socket) {
-  console.log('user,profile', user, profile);
-  usersRef.child(user.data["user_id"]).child("profile").set(profile, function(error) {
-    socket.emit('user profile', profile||error);
+var setUserProfile = function(user, profile, socket) {
+  console.log('user, profile', user, profile);
+  usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
+    socket.emit('user profile', profile || error);
   });
 };
 
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
 
-  socket.on('set profile',function(user) {
+  socket.on('set profile', function(user) {
     var profile = user.profile;
     console.log('user.profile', user.profile);
     facebookTokenValid(user.accessToken, function(user) {
       setUserProfile(user, profile, socket);
     });
   });
-  
-  socket.on('get profile',function(user) {
+
+  socket.on('get profile', function(user) {
     facebookTokenValid(user.accessToken, function(user) {
       getUserProfile(user, socket);
     });
   });
-  socket.on('open room',function(users) {
+  socket.on('open room', function(users) {
     console.log('received open request: Users: ', users);
     facebookTokenValid(users.accessToken, function(user) {
       console.log('opening room');
       openFirebaseRoomForUsers(users, socket);
     });
-  })
-  
+  });
+
   socket.on('loginValidator', function(accessToken) {
     console.log('received loginValidator Request: ', accessToken);
     facebookTokenValid(accessToken, function(user) {
-      console.log('This guy\s logged in');
+      console.log('This guy|s logged in');
       socket.emit('user valid', user);
       getUserProfile(user, socket);
       updateUser(user, socket);
-    })
+    });
   });
-  
+
 });
 
 server.listen(httpPort, function() {

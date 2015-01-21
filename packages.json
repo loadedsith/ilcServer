@@ -2,6 +2,12 @@
   "name": "ignisLibriColloqui",
   "version": "0.0.1",
   "devDependencies": {
+    "gulp":"3.8.x",
+    "gulp-nodemon":"1.0.x",
+    "gulp-notify":"2.1.x",
+    "require-dir":"0.1.0",
+    "gulp-jshint-cached":"1.4.x",
+    "gulp-jscs":"1.4.x"
   },
   "engines": {
     "node": ">=0.10.0"

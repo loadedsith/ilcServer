@@ -1,6 +1,6 @@
 angular.module('ilcServer').controller('MainController', ['$scope', '$socket', function($scope, $socket) {
   console.log('Main Controller Reporting in Captin');
-  
+
   $socket.on('loggedIn', function(data) {
     $scope.data = data;
   });
@@ -10,28 +10,30 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
     $socket.emit('otherEvent', message);
   };
 
-  //test user 'open_fnvwvuk_user@tfbnw.net''s access id, created using https://developers.facebook.com/apps/[APP API KEY]/roles/test-users/
-  
-  $scope.fakedToken = 'CAAJnbZAScLU4BAPtzyqkFEeJB3KD8zOsxBnj9SeZARpLcaJ3treXf8zqRBibZA1zTKnhlP1zSNRsJyM4RwdkhRYOVm6Xtdt9eaZCcOIi6zOFwH9HFtPTAm6ukZBUvbvZCRCXOCFwY72svSgI4jKF9WOh3D3NWQEDaCRmDnSypTf1bOMNeNtM9KZAmPEQMkJmf0dSpTWG2dkbzIQrVOz6MdHiRTIHuCFnn8ZD';
+  //test user open_fnvwvuk_user@tfbnw.net's access id,
+  //created using https://developers.facebook.com/apps/[APP API KEY]/roles/test-users/
+  $scope.fakedToken = 'CAAJnbZAScLU4BAAteGZBCbX97E4VZArn60kZA1IenaK99plLa4' +
+      'Y0vLGH4VzbP88w4eO56OsDpulBRyt7bzXj9sTdpQjcqmJ6WBkucfP57ihSwVtxbKg4ctIoM' +
+      'OlafqhlTWZClYBOZAGeSt4OtuUZAmbUxsW70ZBZAgykE3HNpk3lRhSFdDBZAeYMJX18eYfK' +
+      'bC2DkWZCqltgWWKCwcvsh3etZAGsN6TZAetWresIZD';
+
   $scope.fakeUserId = '1396362880657353';
-  
+
   $scope.testLogin = function() {
     $socket.emit('loginValidator', $scope.fakedToken);
-    
+
   };
-  $scope.loginStatus = "Original";
-  
-  $scope.profile;
-  
+  $scope.loginStatus = 'Original';
+
   $scope.setProfile = function() {
     var config = {
       'userId': $scope.fakeUserId,
       'accessToken': $scope.fakedToken,
-      'profile':'Goober Bean Boo: ' + Math.floor(Math.random()*100)
+      'profile':'Goober Bean Boo: ' + Math.floor(Math.random() * 100)
     };
-    $socket.emit('set profile', config)
+    $socket.emit('set profile', config);
   };
-  
+
   $socket.on('user valid', function(user) {
 
     $scope.loginStatus = 'Login Success! Getting Local Profile...';
@@ -66,23 +68,23 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
     console.log('rooms update', room);
     $scope.rooms.push(String(room.remoteId));
   });
-  
+
   $socket.on('rooms set', function(rooms) {
-    console.log('rooms Set',rooms);
+    console.log('rooms Set', rooms);
     $scope.rooms = rooms;
   });
-  
+
   $scope.messages = {};
-  
+
   $socket.on('room update', function(room) {
     console.log('room update', room);
     $scope.messages[room.room] = room;
   });
-  
+
   $socket.on('room set', function(room) {
     console.log('room set', room);
     $scope.messages[room.room] = {};
     $scope.messages[room.room] = room.snapshot;
   });
-  
+
 }]);
