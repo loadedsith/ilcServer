@@ -191,6 +191,11 @@ var setUserProfile = function(user, profile, socket) {
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
 
+  socket.on('ping', function(data) {
+    data.signed = "gph";
+    console.log('recieved ping', data);
+    socket.emit('pong', data);
+  })
   socket.on('set profile', function(user) {
     var profile = user.profile;
     console.log('user.profile', user.profile);
