@@ -5,11 +5,6 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
     $scope.data = data;
   });
 
-   // Raising an event
-  $scope.raise = function(message) {
-    $socket.emit('otherEvent', message);
-  };
-
   //test user open_fnvwvuk_user@tfbnw.net's access id,
   //created using https://developers.facebook.com/apps/[APP API KEY]/roles/test-users/
   $scope.fakedToken = 'CAAJnbZAScLU4BAAteGZBCbX97E4VZArn60kZA1IenaK99plLa4' +
