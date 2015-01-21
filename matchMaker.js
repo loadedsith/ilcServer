@@ -65,6 +65,7 @@ matchMaker.blacklistMatchList = function(user) {
 };
 
 matchMaker.getMatchList = function(user, usersSnapshot) {
+  matchMaker.matchList = {};
   matchMaker.populateMatchList(user, usersSnapshot);
   matchMaker.blacklistMatchList(user, usersSnapshot);
   return matchMaker.matchList;
