@@ -175,15 +175,14 @@ var getUserProfile = function(user, socket) {
   usersRef.child(user.data["user_id"]).once('value',function(snapshot) {
     socket.emit('user profile', snapshot.val().profile||{})
   });
-
-}
+};
 
 var setUserProfile = function(user, profile,socket) {
   console.log('user,profile', user, profile);
   usersRef.child(user.data["user_id"]).child("profile").set(profile, function(error) {
     socket.emit('user profile', profile||error);
   });
-}
+};
 
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
