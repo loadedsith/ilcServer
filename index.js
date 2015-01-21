@@ -96,9 +96,9 @@ var openFirebaseRoomForUsers = function(users, socket) {
       }
     });
 
-    roomsRef.child(sharedRoomKey).on('value', function(snapshot) {
-      socket.emit('rooms update', {
-        'remoteId':users.remoteId,
+    roomsRef.child(sharedRoomKey).on('child_added', function(snapshot) {
+      socket.emit('room update', {
+        'room':sharedRoomKey,
         'snapshot':snapshot.val()
       });
     });
