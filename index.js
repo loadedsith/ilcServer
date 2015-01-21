@@ -179,9 +179,10 @@ var setUserProfile = function(user, profile, socket) {
 
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
-    console.log('matchMaker', matchMaker.populateMatchList(user, usersSnapshot));
     console.log('usersSnapshot', usersSnapshot.val());
+      socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot))
   });
+
 };
 
 io.sockets.on('connection', function(socket) {
