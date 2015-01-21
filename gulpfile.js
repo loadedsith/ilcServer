@@ -4,6 +4,6 @@ var gulp = require('gulp');
 
 require('require-dir')('./gulp');
 
-gulp.task('default',['jshint','jscs'], function() {
+gulp.task('default', function() {
     gulp.start('server');
 });
