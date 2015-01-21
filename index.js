@@ -83,12 +83,12 @@ var pipeFirebaseToSocket = function(user, socket) {
 
 var openFirebaseRoomForUsers = function(users, socket) {
   if (users.localId !== undefined && users.remoteId !== undefined) {
-    var key;
+    var sharedRoomKey;
 
     if (users.localId > users.remoteId) {
-      key = users.remoteId + '+' + users.localId;
+      sharedRoomKey = users.remoteId + '+' + users.localId;
     } else {
-      key = users.localId + '+' + users.remoteId;
+      sharedRoomKey = users.localId + '+' + users.remoteId;
     }
 
     emptyRoom = [
@@ -97,8 +97,8 @@ var openFirebaseRoomForUsers = function(users, socket) {
         'time': new Date().getTime()
       }
     ];
-
-    roomsRef.child(key).set(emptyRoom);
+    
+    roomsRef.child(sharedRoomKey).set(emptyRoom);
 
     userRef = usersRef.child(users.localId);
 
@@ -108,7 +108,7 @@ var openFirebaseRoomForUsers = function(users, socket) {
       }
     });
 
-    roomsRef.child(key).on('value', function(snapshot) {
+    roomsRef.child(sharedRoomKey).on('value', function(snapshot) {
       socket.emit('rooms update', {
         'remoteId':users.remoteId,
         'snapshot':snapshot.val()
@@ -173,6 +173,7 @@ var updateUser = function(user, socket) {
     pipeFirebaseToSocket(u, socket);
   });
 };
+
 var getUserProfile = function(user, socket) {
   console.log('looking for ' + user.data['user_id'] + ' profile');
   usersRef.child(user.data['user_id']).once('value', function(snapshot) {
@@ -203,6 +204,7 @@ io.sockets.on('connection', function(socket) {
       getUserProfile(user, socket);
     });
   });
+  
   socket.on('open room', function(users) {
     console.log('received open request: Users: ', users);
     facebookTokenValid(users.accessToken, function(user) {
