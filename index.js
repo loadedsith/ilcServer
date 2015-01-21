@@ -66,19 +66,7 @@ var pipeFirebaseToSocket = function(user, socket) {
   } else {
     user.rooms = {};
   }
-
   socket.emit('rooms set', user.rooms);
-
-  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+'_').on('child_added', function(child) {
-  //   console.log('child', child.val());
-  //   socket.emit('rooms update', child.val());
-  // });
-  //
-  // roomsRef.orderByKey().startAt(String(userId)).endAt(userId+'_').on('value', function(rooms) {
-  //   console.log('rooms for String(userId)', rooms.val(), String(userId));
-  //   socket.emit('rooms set', rooms.val());
-  // });
-
 };
 
 var openFirebaseRoomForUsers = function(users, socket) {
@@ -195,7 +183,8 @@ io.sockets.on('connection', function(socket) {
     data.signed = "gph";
     console.log('recieved ping', data);
     socket.emit('pong', data);
-  })
+  });
+  
   socket.on('set profile', function(user) {
     var profile = user.profile;
     console.log('user.profile', user.profile);
