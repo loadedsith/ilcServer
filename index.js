@@ -8,6 +8,8 @@ var fb = require('fb');
 
 var firebase = require('firebase');
 
+var matchMaker = require('./matchMaker');
+
 var firebaseUrl;
 var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
 firebaseUrl = firebaseUrlFile[0];
@@ -130,7 +132,6 @@ var facebookTokenValid = function(accessToken, callback) {
     if (response.data !== undefined) {
       if (response.data['is_valid'] === true) {
         response.data.setTime = new Date().getTime();
-        console.log('response', response);
         tokensByUserId[response.data['user_id']] = response;
         if (typeof callback === 'function') {
           callback(response);
@@ -176,6 +177,13 @@ var setUserProfile = function(user, profile, socket) {
   });
 };
 
+var getUserMatches = function(user, socket) {
+  usersRef.on('value',function(usersSnapshot) {
+    console.log('matchMaker', matchMaker.populateMatchList(user, usersSnapshot));
+    console.log('usersSnapshot', usersSnapshot.val());
+  });
+};
+
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
 
@@ -191,6 +199,12 @@ io.sockets.on('connection', function(socket) {
     facebookTokenValid(user.accessToken, function(user) {
       setUserProfile(user, profile, socket);
     });
+  });
+
+  socket.on('get user matches', function(user) {
+    // facebookTokenValid(user.accessToken, function(user) {
+      getUserMatches(user, socket);
+    // });
   });
 
   socket.on('get profile', function(user) {
