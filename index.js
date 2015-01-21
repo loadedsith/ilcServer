@@ -149,6 +149,28 @@ var updateUser = function(user, socket) {
   userRef = usersRef.child(user.data['user_id']);
   userRef.on('value', function(snapshot) {
     var value = snapshot.val();
+    if (value === null) {
+
+      user.profile = {
+        // blacklist:[],//commented cuz firebase deletes empty objects automagically
+        // email:'',
+        'id': user.data['user_id']//,
+        // name:'',
+        // topics:[]
+      };
+
+      usersRef.child(user.data['user_id']).set(user,function(err) {
+        console.log('created user'+user.data['user_id']);
+        if(err === null){
+          
+        } else {
+          
+          console.log('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
+        }
+        updateUser(user,socket)
+      });
+      return
+    }
     var u = {
       userId: user.data['user_id'],
       ref: userRef,
@@ -166,7 +188,13 @@ var updateUser = function(user, socket) {
 var getUserProfile = function(user, socket) {
   console.log('looking for ' + user.data['user_id'] + ' profile');
   usersRef.child(user.data['user_id']).once('value', function(snapshot) {
-    socket.emit('user profile', snapshot.val().profile || {});
+    var value = snapshot.val();
+    if (value === null || value === undefined) {
+      socket.emit('user profile', {});
+    }else{
+      socket.emit('user profile', (value.profile || {}));
+    }
+
   });
 };
 
@@ -180,7 +208,7 @@ var setUserProfile = function(user, profile, socket) {
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
     console.log('usersSnapshot', usersSnapshot.val());
-      socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot))
+    socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot));
   });
 
 };
@@ -203,9 +231,9 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('get user matches', function(user) {
-    // facebookTokenValid(user.accessToken, function(user) {
+    facebookTokenValid(user.accessToken, function(user) {
       getUserMatches(user, socket);
-    // });
+    });
   });
 
   socket.on('get profile', function(user) {
@@ -222,8 +250,8 @@ io.sockets.on('connection', function(socket) {
     });
   });
 
-  socket.on('loginValidator', function(accessToken) {
-    console.log('received loginValidator Request: ', accessToken);
+  socket.on('login validator', function(accessToken) {
+    console.log('received login validator Request: ', accessToken);
     facebookTokenValid(accessToken, function(user) {
       console.log('This guy|s logged in');
       socket.emit('user valid', user);
