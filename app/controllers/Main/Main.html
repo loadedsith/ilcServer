@@ -1,10 +1,24 @@
 <div ng-controller="MainController">
   <h1>Main</h1>
-  <div class="label">rooms:</div>
-  <pre class="rooms" ng-bind="rooms|json"></pre>
-  <div class="label">messages:</div>
-  <pre class="messages" ng-bind="messages|json"></pre>
   <button class="topcoat-button--large" ng-click="testLogin()">Re-Test Login</button>
-  <button class="topcoat-button--large" ng-click="openRoom()">Open Room</button>
   <button class="topcoat-button--large" ng-click="openRandomRoom()">Open Random Room</button>
+  <table>
+    <tr>
+      <td>
+        <div class="label">rooms:</div>
+      </td>
+      <td>
+        <pre class="rooms" ng-bind="rooms|json"></pre>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div class="label">messages:</div>
+      </td>
+      <td>
+        <pre class="messages" ng-bind="messages|json"></pre>
+      </td>
+    </tr>
+  </table>
+
 </div>
