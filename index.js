@@ -1,4 +1,4 @@
-var httpPort = 8080;
+var httpPort = 9999;
 var socketPort = 5000;
 
 var restify = require('restify');
