@@ -10,30 +10,52 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
     $socket.emit('otherEvent', message);
   };
 
-  //test user "open_fnvwvuk_user@tfbnw.net"'s access id, created using https://developers.facebook.com/apps/[APP API KEY]/roles/test-users/
+  //test user 'open_fnvwvuk_user@tfbnw.net''s access id, created using https://developers.facebook.com/apps/[APP API KEY]/roles/test-users/
   
-  $scope.fakedToken = "CAAJnbZAScLU4BAP9duyGz4EC0vGA4HXCRQYv0tH5IfIxZB9OBeOZCubfPph2ImyBq5v2b7oaInYj2TmjNJ2ukhs8OZBBH9o6MMxLoZC7OpXJfCQIdkOpoHKTnbFbVOtKDNB0vrLYMmrZCIQLkyJm0fH04OUlCFovXujckwZBAeTSl3ST1H6a3jk0eFhX7e9hvn8JUAtH5nZABPmkXiIhZCSfzLKyF3ULoGQEZD";
-  $scope.fakeUserId = "1396362880657353";
+  $scope.fakedToken = 'CAAJnbZAScLU4BAPtzyqkFEeJB3KD8zOsxBnj9SeZARpLcaJ3treXf8zqRBibZA1zTKnhlP1zSNRsJyM4RwdkhRYOVm6Xtdt9eaZCcOIi6zOFwH9HFtPTAm6ukZBUvbvZCRCXOCFwY72svSgI4jKF9WOh3D3NWQEDaCRmDnSypTf1bOMNeNtM9KZAmPEQMkJmf0dSpTWG2dkbzIQrVOz6MdHiRTIHuCFnn8ZD';
+  $scope.fakeUserId = '1396362880657353';
+  
   $scope.testLogin = function() {
     $socket.emit('loginValidator', $scope.fakedToken);
+    
+  };
+  $scope.loginStatus = "Original";
+  
+  $scope.profile;
+  
+  $scope.setProfile = function() {
+    var config = {
+      'userId': $scope.fakeUserId,
+      'accessToken': $scope.fakedToken,
+      'profile':'Goober Bean Boo: ' + Math.floor(Math.random()*100)
+    };
+    $socket.emit('set profile', config)
   };
   
-  $socket.emit('get profile', {"userId":$scope.fakeUserId,"accessToken":$scope.fakedToken});
-  
-  $scope.testLogin()
-  
-  $scope.openRoom = function() {
-    $socket.emit('open room', {
-      "accessToken": $scope.fakedToken,
-      "localId":$scope.fakeUserId,
-      "remoteId":11111
-    });
-  };
+  $socket.on('user valid', function(user) {
+
+    $scope.loginStatus = 'Login Success! Getting Local Profile...';
+    var config = {
+      'userId': $scope.fakeUserId,
+      'accessToken': $scope.fakedToken
+    };
+    $socket.emit('get profile', config);
+  });
+
+  $socket.on('user error', function(profile) {
+    console.log('user error');
+  });
+
+  $socket.on('user profile', function(profile) {
+    $scope.loginStatus = 'Got Profile!';
+    $scope.profile = profile;
+  });
+
   $scope.openRandomRoom = function() {
-    var fakeSecondUser = Math.floor( Math.random() * 10000 );//lookin for a 5 didgit random number, kk?
+    var fakeSecondUser = 10000 + Math.floor(Math.random() * 100000);//lookin for a 5 didgit-ish random number, kk?
     var fakeUserIds = {
-      "localId":$scope.fakeUserId,
-      "remoteId":fakeSecondUser
+      'localId':$scope.fakeUserId,
+      'remoteId':fakeSecondUser
     };
     $socket.emit('open room', fakeUserIds);
   };

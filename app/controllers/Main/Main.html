@@ -1,8 +1,18 @@
 <div ng-controller="MainController">
   <h1>Main</h1>
+  <h4>{{loginStatus}}</h4>
   <button class="topcoat-button--large" ng-click="testLogin()">Re-Test Login</button>
+  <button class="topcoat-button--large" ng-click="setProfile()">Set Profile</button>
   <button class="topcoat-button--large" ng-click="openRandomRoom()">Open Random Room</button>
   <table>
+    <tr>
+      <td>
+        <div class="label">profile:</div>
+      </td>
+      <td>
+        <pre class="profile" ng-bind="profile|json"></pre>
+      </td>
+    </tr>
     <tr>
       <td>
         <div class="label">rooms:</div>

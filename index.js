@@ -134,7 +134,7 @@ var facebookTokenValid = function(accessToken, callback) {
       console.log('Access key was still valid according to Facebook, using cached authority.');
       return;
     }
-  }
+  };
   fb.api(resource, function (response) {
     if (response.data !== undefined) {
       if (response.data['is_valid'] === true) {
@@ -170,25 +170,35 @@ var updateUser = function(user, socket) {
     pipeFirebaseToSocket(u, socket);
   })
 }
-var getUserProfile = function(user, callback) {
-  console.log('user', user);
-  usersRef.startAt(user.data["userId"]).endAt(user.data["userId"]).once('value',function(a) {
-    console.log('!0101010101',a.val());
-  })
-  
+var getUserProfile = function(user, socket) {
+  console.log('looking for ' + user.data["user_id"] + ' profile');
+  usersRef.child(user.data["user_id"]).once('value',function(snapshot) {
+    socket.emit('user profile', snapshot.val().profile||{})
+  });
+
 }
+
+var setUserProfile = function(user, profile,socket) {
+  console.log('user,profile', user, profile);
+  usersRef.child(user.data["user_id"]).child("profile").set(profile, function(error) {
+    socket.emit('user profile', profile||error);
+  });
+}
+
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
+
+  socket.on('set profile',function(user) {
+    var profile = user.profile;
+    console.log('user.profile', user.profile);
+    facebookTokenValid(user.accessToken, function(user) {
+      setUserProfile(user, profile, socket);
+    });
+  });
   
-  socket.on('get profile',function(users) {
-    facebookTokenValid(users.accessToken, function(user) {
-      socket.emit('user valid',true);
-      getUserProfile(user, function(profile, err) {
-        if (err !== undefined){
-          socket.emit('user error', err);
-          return;
-        }
-      });
+  socket.on('get profile',function(user) {
+    facebookTokenValid(user.accessToken, function(user) {
+      getUserProfile(user, socket);
     });
   });
   socket.on('open room',function(users) {
@@ -203,6 +213,8 @@ io.sockets.on('connection', function(socket) {
     console.log('received loginValidator Request: ', accessToken);
     facebookTokenValid(accessToken, function(user) {
       console.log('This guy\s logged in');
+      socket.emit('user valid', user);
+      getUserProfile(user, socket);
       updateUser(user, socket);
     })
   });
