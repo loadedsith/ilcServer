@@ -55,13 +55,8 @@ var pipeFirebaseToSocket = function(user, socket) {
     for (var roomKey in user.rooms) {
       var room = user.rooms[roomKey];
 
-      var roomName;
-      if (parseInt(userId) > parseInt(room)) {
-        roomName = String(room + '+' + userId);
-      } else {
-        roomName = String(userId + '+' + room);
-      }
-
+      var roomName = makeRoomPairName(userId,room);
+      console.log('subscribe user to roomName: ',roomName);
       createRoomEmitsForUserOnSocket(roomName, userId, socket);
 
     }
@@ -73,13 +68,7 @@ var pipeFirebaseToSocket = function(user, socket) {
 
 var openFirebaseRoomForUsers = function(users, socket) {
   if (users.localId !== undefined && users.remoteId !== undefined) {
-    var sharedRoomKey;
-
-    if (users.localId > users.remoteId) {
-      sharedRoomKey = users.remoteId + '+' + users.localId;
-    } else {
-      sharedRoomKey = users.localId + '+' + users.remoteId;
-    }
+    var sharedRoomKey = makeRoomPairName(users.localId, users.remoteId);
 
     emptyRoom = [
       {
@@ -167,9 +156,10 @@ var updateUser = function(user, socket) {
           
           console.log('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
         }
-        updateUser(user,socket)
+        updateUser(user,socket);
       });
-      return
+      //function re-called after user is successfully created
+      return;
     }
     var u = {
       userId: user.data['user_id'],
@@ -205,6 +195,35 @@ var setUserProfile = function(user, profile, socket) {
   });
 };
 
+var makeRoomPairName = function(userA, userB) {
+  var roomName;
+  console.log('userA,userB', userA,userB);
+  if ( parseInt(userA) > parseInt(userB)) {
+    roomName = String(userB + '+' + userA);
+  } else {
+    roomName = String(userA + '+' + userB);
+  }
+  
+  return roomName;
+}
+
+var sendMessage = function(user, room, message, socket) {
+  console.log('-----user, room, message', user, room, message);
+  var roomName = makeRoomPairName(user.data['user_id'], room);
+  var messageObject = {
+    date: new Date().getTime(),
+    user:user,
+    message:message
+  };
+  roomsRef.child(roomName).push(messageObject, function() {
+    console.log('successfully posted message');
+    socket.emit('message sent', messageObject);
+  })
+  // usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
+//      socket.emit('user profile', profile || error);
+//    });
+};
+
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
     console.log('usersSnapshot', usersSnapshot.val());
@@ -236,6 +255,16 @@ io.sockets.on('connection', function(socket) {
     });
   });
 
+  socket.on('send message', function(config) {
+    console.log('++++++config', config);
+    var accessToken = config.accessToken;
+    var message = config.message;
+    var room = config.room;
+    facebookTokenValid(accessToken, function(user) {
+      sendMessage(user, room, message, socket);
+    });
+  });
+
   socket.on('get profile', function(user) {
     facebookTokenValid(user.accessToken, function(user) {
       getUserProfile(user, socket);
@@ -251,9 +280,9 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('login validator', function(accessToken) {
-    console.log('received login validator Request: ', accessToken);
+    console.log('received login validator Request: ');
     facebookTokenValid(accessToken, function(user) {
-      console.log('This guy|s logged in');
+      console.log('This guy is logged in:', user);
       socket.emit('user valid', user);
       getUserProfile(user, socket);
       updateUser(user, socket);
