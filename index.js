@@ -40,17 +40,18 @@ var roomsRef = new firebase(firebaseUrl + '/rooms/');
 var usersRef = new firebase(firebaseUrl + '/users/');
 
 var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
-  roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('value', function(rooms) {
-    socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
-    roomsRef.orderByKey().startAt(roomName).endAt(roomName).on('child_added', function(child) {
-      socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
-    });
+  console.log('subscribe user to : ',firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
+  var updateRef = new firebase(firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
+  // roomsRef.orderByChild('date').on('value', function(rooms) {
+  //   socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
+  // });
+  updateRef.orderByChild('date').on('child_added', function(child) {
+    socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
   });
 };
 
 var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
-  roomsRef = new firebase(firebaseUrl + '/rooms/');
   if (user.rooms !== undefined) {
     for (var roomKey in user.rooms) {
       var room = user.rooms[roomKey];
@@ -176,12 +177,22 @@ var updateUser = function(user, socket) {
 };
 
 var getUserProfile = function(user, socket) {
-  usersRef.child(user.data['user_id']).once('value', function(snapshot) {
+  var userId; 
+  
+  if (user.user === undefined) {
+    userId = user.data['user_id'];
+    //TODO: Dont pass fb objects around, pass ilcUsers, which dont exist yet so...
+  }else{
+    userId = user.user;
+  }
+  console.log('looking for ' + userId + ' profile');
+  usersRef.child(userId).once('value', function(snapshot) {
     var value = snapshot.val();
     if (value === null || value === undefined) {
       socket.emit('user profile', {});
     }else{
-      socket.emit('user profile', (value.profile || {}));
+      // socket.emit('user profile', (value.profile || {}));//send back the whole user.
+      socket.emit('user profile', (value || {}));
     }
 
   });
@@ -214,6 +225,7 @@ var sendMessage = function(user, room, message, socket) {
   };
   roomsRef.child(roomName).push(messageObject, function() {
     // console.log('successfully posted message');
+    messageObject.room = room;
     socket.emit('message sent', messageObject);
   })
   // usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
@@ -262,9 +274,13 @@ io.sockets.on('connection', function(socket) {
     });
   });
 
-  socket.on('get profile', function(user) {
-    facebookTokenValid(user.accessToken, function(user) {
-      getUserProfile(user, socket);
+  socket.on('get profile', function(requestedUser) {
+    console.log('---get profile for user: ', requestedUser);
+    facebookTokenValid(requestedUser.accessToken, function(facebookUser) {
+      //TODO: this allows any user to request any other user's profile
+      // it should be secured to only get matches' profiles, but that would be
+      // very difficult at this point
+      getUserProfile(requestedUser, socket);
     });
   });
   
