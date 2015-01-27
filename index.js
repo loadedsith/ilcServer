@@ -56,7 +56,7 @@ var pipeFirebaseToSocket = function(user, socket) {
       var room = user.rooms[roomKey];
 
       var roomName = makeRoomPairName(userId,room);
-      console.log('subscribe user to roomName: ',roomName);
+
       createRoomEmitsForUserOnSocket(roomName, userId, socket);
 
     }
@@ -176,7 +176,6 @@ var updateUser = function(user, socket) {
 };
 
 var getUserProfile = function(user, socket) {
-  console.log('looking for ' + user.data['user_id'] + ' profile');
   usersRef.child(user.data['user_id']).once('value', function(snapshot) {
     var value = snapshot.val();
     if (value === null || value === undefined) {
@@ -189,7 +188,6 @@ var getUserProfile = function(user, socket) {
 };
 
 var setUserProfile = function(user, profile, socket) {
-  console.log('user, profile', user, profile);
   usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
     socket.emit('user profile', profile || error);
   });
@@ -197,7 +195,6 @@ var setUserProfile = function(user, profile, socket) {
 
 var makeRoomPairName = function(userA, userB) {
   var roomName;
-  console.log('userA,userB', userA,userB);
   if ( parseInt(userA) > parseInt(userB)) {
     roomName = String(userB + '+' + userA);
   } else {
@@ -208,7 +205,7 @@ var makeRoomPairName = function(userA, userB) {
 }
 
 var sendMessage = function(user, room, message, socket) {
-  console.log('-----user, room, message', user, room, message);
+  console.log('Send Message: room, message', room, message);
   var roomName = makeRoomPairName(user.data['user_id'], room);
   var messageObject = {
     date: new Date().getTime(),
@@ -216,7 +213,7 @@ var sendMessage = function(user, room, message, socket) {
     message:message
   };
   roomsRef.child(roomName).push(messageObject, function() {
-    console.log('successfully posted message');
+    // console.log('successfully posted message');
     socket.emit('message sent', messageObject);
   })
   // usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
@@ -226,7 +223,7 @@ var sendMessage = function(user, room, message, socket) {
 
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
-    console.log('usersSnapshot', usersSnapshot.val());
+    // console.log('usersSnapshot', usersSnapshot.val());
     socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot));
   });
 
@@ -256,7 +253,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('send message', function(config) {
-    console.log('++++++config', config);
+    console.log('socket on: send message: ', config);
     var accessToken = config.accessToken;
     var message = config.message;
     var room = config.room;

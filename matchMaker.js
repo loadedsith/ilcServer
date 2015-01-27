@@ -6,7 +6,7 @@ matchMaker.populateMatchList = function(user, usersSnapshot) {
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
     if (user.topics !== undefined) {
-      console.log('user with topics', user.topics);
+      // console.log('user with topics', user.topics);
       for (var ti = 0; ti < user.topics.length; ti++) {
         var topic = user.topics[ti];
         if (matchMaker.matchList[topic] === undefined) {
@@ -16,14 +16,14 @@ matchMaker.populateMatchList = function(user, usersSnapshot) {
         }
       }
     } else {
-      console.log('user with no topics', user);
+      // console.log('user with no topics', user);
       if (matchMaker.matchList['no-topic'] === undefined) {
         matchMaker.matchList['no-topic'] = [String(user.id||user.data['user_id'])];
       } else {
         matchMaker.matchList['no-topic'].push(String(user.id||user.data['user_id']));
       }
     }
-    console.log('Matched matchList', matchMaker.matchList);
+    // console.log('Matched matchList', matchMaker.matchList);
   });
   return matchMaker.matchList;
 };
@@ -48,7 +48,7 @@ matchMaker.blacklistMatchList = function(user) {
           //go through the matched topic's user ids
           if (String(blacklisted) === String(matchForTopic)) {
             //flag this matchForTopic for removal
-            console.log('blacklisted flagged for removal', blacklisted, 'for topic: ' + topic);
+            // console.log('blacklisted flagged for removal', blacklisted, 'for topic: ' + topic);
             itIsBlacklisted = true;
           }
         }
