@@ -42,11 +42,17 @@ var usersRef = new firebase(firebaseUrl + '/users/');
 var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
   console.log('subscribe user to : ',firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
   var updateRef = new firebase(firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
-  // roomsRef.orderByChild('date').on('value', function(rooms) {
-  //   socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
-  // });
-  updateRef.orderByChild('date').on('child_added', function(child) {
-    socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
+  updateRef.orderByChild('date').once('value', function(rooms) {
+    socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
+    var first = true;
+    updateRef.endAt().limitToLast(1).on("child_added", function(child) {
+      if( first ) {
+          first = false; 
+      } 
+      else {
+        socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
+      }
+    });
   });
 };
 
