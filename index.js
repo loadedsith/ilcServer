@@ -250,6 +250,11 @@ var getUserMatches = function(user, socket) {
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
 
+  socket.on('disconnect', function () {
+    console.log('disconnected');
+    socket.emit('user disconnected',true);
+  });
+
   socket.on('ping', function(data) {
     data.signed = "gph";
     console.log('recieved ping', data);
@@ -281,7 +286,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('get profile', function(requestedUser) {
-    console.log('---get profile for user: ', requestedUser);
+    console.log('get user profile: ', requestedUser.user);
     facebookTokenValid(requestedUser.accessToken, function(facebookUser) {
       //TODO: this allows any user to request any other user's profile
       // it should be secured to only get matches' profiles, but that would be
