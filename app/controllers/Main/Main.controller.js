@@ -15,7 +15,7 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
   $scope.fakeUserId = '1396362880657353';
 
   $scope.testLogin = function() {
-    $socket.emit('loginValidator', $scope.fakedToken);
+    $socket.emit('login validator', $scope.fakedToken);
 
   };
   $scope.loginStatus = 'Original';
