@@ -46,10 +46,10 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
     socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
     var first = true;
     updateRef.endAt().limitToLast(1).on("child_added", function(child) {
-      if( first ) {
-          first = false; 
-      } 
-      else {
+      console.log('roomUpdate',child.val());
+      if (first) {
+        first = false;
+      } else {
         socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
       }
     });
@@ -83,7 +83,7 @@ var openFirebaseRoomForUsers = function(users, socket) {
         'time': new Date().getTime()
       }
     ];
-    
+
     roomsRef.child(sharedRoomKey).set(emptyRoom);
 
     userRef = usersRef.child(users.localId);
@@ -158,9 +158,9 @@ var updateUser = function(user, socket) {
       usersRef.child(user.data['user_id']).set(user,function(err) {
         console.log('created user'+user.data['user_id']);
         if(err === null){
-          
+
         } else {
-          
+
           console.log('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
         }
         updateUser(user,socket);
@@ -183,8 +183,8 @@ var updateUser = function(user, socket) {
 };
 
 var getUserProfile = function(user, socket) {
-  var userId; 
-  
+  var userId;
+
   if (user.user === undefined) {
     userId = user.data['user_id'];
     //TODO: Dont pass fb objects around, pass ilcUsers, which dont exist yet so...
@@ -217,7 +217,7 @@ var makeRoomPairName = function(userA, userB) {
   } else {
     roomName = String(userA + '+' + userB);
   }
-  
+
   return roomName;
 }
 
@@ -260,7 +260,7 @@ io.sockets.on('connection', function(socket) {
     console.log('recieved ping', data);
     socket.emit('pong', data);
   });
-  
+
   socket.on('set profile', function(user) {
     var profile = user.profile;
     console.log('user.profile', user.profile);
@@ -294,7 +294,7 @@ io.sockets.on('connection', function(socket) {
       getUserProfile(requestedUser, socket);
     });
   });
-  
+
   socket.on('open room', function(users) {
     console.log('received open request: Users: ', users);
     facebookTokenValid(users.accessToken, function(user) {
