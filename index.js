@@ -256,7 +256,12 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('ping', function(data) {
-    data.signed = "gph";
+    if(data){
+      data.signed = "gph";
+    }else{
+      data = {signed:"gph"};
+    }
+
     console.log('recieved ping', data);
     socket.emit('pong', data);
   });
