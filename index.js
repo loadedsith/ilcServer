@@ -250,9 +250,11 @@ var getUserMatches = function(user, socket) {
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
 
+
   socket.on('disconnect', function () {
-    console.log('disconnected');
-    socket.emit('user disconnected',true);
+    console.log('disconnected user socketId'+socketId);
+    socket.emit('disconnect', true);
+    socket.disconnect();
   });
 
   socket.on('ping', function(data) {
