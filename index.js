@@ -205,9 +205,15 @@ var getUserProfile = function(user, socket) {
 };
 
 var setUserProfile = function(user, profile, socket) {
-  usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
-    socket.emit('user profile', profile || error);
-  });
+  if(profile!==undefined){
+    usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
+      console.log('updated profile', profile || error);
+      socket.emit('user profile update', profile || error);
+    });
+
+  }else{
+    console.log('not setting profile because it was undefined');
+  }
 };
 
 var makeRoomPairName = function(userA, userB) {
