@@ -252,8 +252,7 @@ io.sockets.on('connection', function(socket) {
 
 
   socket.on('disconnect', function () {
-    console.log('disconnected user socketId'+socketId);
-    socket.emit('disconnect', true);
+    console.log('disconnected user socketId' + socketId);
     socket.disconnect();
   });
 
