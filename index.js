@@ -241,7 +241,6 @@ var sendMessage = function(user, room, message, socket) {
 
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
-    // console.log('usersSnapshot', usersSnapshot.val());
     socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot));
   });
 
