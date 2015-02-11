@@ -45,8 +45,7 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
   updateRef.orderByChild('date').once('value', function(rooms) {
     socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
     var first = true;
-    updateRef.endAt().limitToLast(1).on("child_added", function(child) {
-      console.log('roomUpdate',child.val());
+    updateRef.endAt().limitToLast(1).on('child_added', function(child) {
       if (first) {
         first = false;
       } else {
@@ -109,7 +108,6 @@ var openFirebaseRoomForUsers = function(users, socket) {
 var facebookTokenValid = function(accessToken, callback) {
   var appId = '676670295780686';
   var appAccessToken = appId + '|' + appSecret;
-
   //https://graph.facebook.com/debug_token?input_token={id}&access_token={appAccessToken}
   var resource = 'debug_token?input_token=' + accessToken + '&access_token=' + appAccessToken;
   for (var cachedUserResponseKey in tokensByUserId) {
@@ -263,9 +261,9 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('ping', function(data) {
     if(data){
-      data.signed = "gph";
+      data.signed = 'gph';
     }else{
-      data = {signed:"gph"};
+      data = {signed:'gph'};
     }
 
     console.log('recieved ping', data);
@@ -315,7 +313,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('login validator', function(accessToken) {
-    console.log('received login validator Request: ');
+    console.log('received login validator access token: ',accessToken);
     facebookTokenValid(accessToken, function(user) {
       console.log('This guy is logged in:', user);
       socket.emit('user valid', user);
