@@ -185,9 +185,9 @@ var updateUser = function(user, socket) {
       ref: userRef,
       rooms:[]
     };
-    if (value.rooms !== undefined) {
-      for (var room in value.rooms) {
-        u.rooms.push(value.rooms[room]);
+    if (value.profile.rooms !== undefined) {
+      for (var room in value.profile.rooms) {
+        u.rooms.push(value.profile.rooms[room]);
       }
     }
     pipeFirebaseToSocket(u, socket);
