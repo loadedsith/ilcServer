@@ -106,37 +106,51 @@ var openFirebaseRoomForUsers = function(users, socket) {
 };
 
 var facebookTokenValid = function(accessToken, callback) {
+  if (accessToken === undefined) {
+    console.error('---------abort access token is missing');
+    console.log('callback', callback);
+    return;
+  }
+
   var appId = '676670295780686';
   var appAccessToken = appId + '|' + appSecret;
   //https://graph.facebook.com/debug_token?input_token={id}&access_token={appAccessToken}
   var resource = 'debug_token?input_token=' + accessToken + '&access_token=' + appAccessToken;
-  for (var cachedUserResponseKey in tokensByUserId) {
-    var cachedUserResponse = tokensByUserId[cachedUserResponseKey];
+
+  var foundCachedToken = false;
+  var cachedUserResponse = tokensByUserId[accessToken];
+  if (cachedUserResponse !== undefined) {
     var now = new Date().getTime();
     now = now / 1000;
     if (cachedUserResponse.data['expires_at'] > now) {
       if (typeof callback === 'function') {
+        console.log('using cached facebook authority');
         callback(cachedUserResponse);
+        foundCachedToken = true;
       }
-      console.log('Access key was still valid according to Facebook, using cached authority.');
-      return;
     }
   }
-  fb.api(resource, function(response) {
-    if (response.data !== undefined) {
-      if (response.data['is_valid'] === true) {
-        response.data.setTime = new Date().getTime();
-        tokensByUserId[response.data['user_id']] = response;
-        if (typeof callback === 'function') {
-          callback(response);
+  if (foundCachedToken === false) {
+    console.log('new facebook request must be made');
+    console.log('resource', resource);
+    fb.api(resource, function(response) {
+      console.log('-----response', response);
+      if (response.data !== undefined) {
+        if (response.data['is_valid'] === true) {
+          console.log('granted authority by facebook');
+          response.data.setTime = new Date().getTime();
+          tokensByUserId[accessToken] = response;
+          if (typeof callback === 'function') {
+            callback(response);
+          }
+        } else {
+          console.log('response.is_valid is not true', response);
         }
       } else {
-        console.log('response.is_valid is not true', response);
+        console.log('response.data is missing', response);
       }
-    } else {
-      console.log('response.data is missing', response);
-    }
-  });
+    });
+  }
 };
 
 var updateUser = function(user, socket) {
@@ -180,37 +194,54 @@ var updateUser = function(user, socket) {
   });
 };
 
-var getUserProfile = function(user, socket) {
-  var userId;
-
-  if (user.user === undefined) {
-    userId = user.data['user_id'];
-    //TODO: Dont pass fb objects around, pass ilcUsers, which dont exist yet so...
+var getUserProfile = function(request, socket) {
+  var user;
+  // console.log('get user profile: request', request);
+  if (request.data !== undefined) {
+    user = request.data['user_id'];
   }else{
-    userId = user.user;
+    user = request.user;
   }
-  console.log('looking for ' + userId + ' profile');
-  usersRef.child(userId).once('value', function(snapshot) {
+
+  console.log('looking for ' + user + ' profile');
+  usersRef.child(user).once('value', function(snapshot) {
+
     var value = snapshot.val();
+    // console.log('> found' , value);
+
     if (value === null || value === undefined) {
+      console.log('emit null user profile');
       socket.emit('user profile', {});
     }else{
+      if(value.profile === undefined){
+        value.profile = {
+          'aboutMe' : '',
+          'blacklist' : [ ],
+          'email' : '',
+          'id' : user,
+          'interests' : [ ],
+          'name' : '',
+          'test1:':Math.floor(Math.random()*1000)
+        };
+      }
       // socket.emit('user profile', (value.profile || {}));//send back the whole user.
+      console.log('emit user profile',value);
       socket.emit('user profile', (value || {}));
     }
-
   });
 };
 
-var setUserProfile = function(user, profile, socket) {
-  if(profile!==undefined){
-    usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
+var setUserProfile = function(user, socket) {
+  var profile = user.user.profile;
+  console.log('+_+_=_=_=_=_=_=-set user profile, user: ', user);
+  console.log('profile', profile);
+  if((profile||{}).name !== undefined){
+    usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
       console.log('updated profile', profile || error);
       socket.emit('user profile update', profile || error);
     });
-
   }else{
-    console.log('not setting profile because it was undefined');
+    console.log('couldnt update user profile, as profile was unset');
   }
 };
 
@@ -245,9 +276,9 @@ var sendMessage = function(user, room, message, socket) {
 
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
-    socket.emit('got user matchList', matchMaker.getMatchList(user, usersSnapshot));
+    var matchList = matchMaker.getMatchList(user, usersSnapshot);
+    socket.emit('got user matchList', matchList);
   });
-
 };
 
 io.sockets.on('connection', function(socket) {
@@ -271,10 +302,9 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('set profile', function(user) {
-    var profile = user.profile;
-    console.log('user.profile', user.profile);
-    facebookTokenValid(user.accessToken, function(user) {
-      setUserProfile(user, profile, socket);
+    console.log('set profile user', user);
+    facebookTokenValid(user.accessToken, function(fbUser) {
+      setUserProfile(user, socket);
     });
   });
 
