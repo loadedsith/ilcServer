@@ -318,6 +318,7 @@ io.sockets.on('connection', function(socket) {
       console.log('This guy is logged in:', user);
       socket.emit('user valid', user);
       getUserProfile(user, socket);
+      getUserMatches(user, socket);
       updateUser(user, socket);
     });
   });
