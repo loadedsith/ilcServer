@@ -2,28 +2,34 @@
 var firebase = require('firebase');
 var matchMaker = {};
 matchMaker.matchList = {};
-matchMaker.populateMatchList = function(user, usersSnapshot) {
+matchMaker.populateMatchList = function(inUser, usersSnapshot) {
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
+    var userId = user.id||user.data['user_id'];
     if ((user.profile||{}).interests !== undefined) {
       // console.log('user with profile.interests', user.profile.interests);
       for (var ti = 0; ti < user.profile.interests.length; ti++) {
         var interest = user.profile.interests[ti];
-        if (matchMaker.matchList[interest] === undefined) {
-          matchMaker.matchList[interest] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
-        } else {
-          matchMaker.matchList[interest].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
+        console.log('inUser.data[\'user_id\']', inUser.data['user_id']);
+        console.log('userId', userId);
+        if (String(inUser.id) !== String(userId)) {
+          //Skip yourself son
+          if (matchMaker.matchList[interest] === undefined) {
+            matchMaker.matchList[interest] = [{id:String(userId),profile:(user.profile||null)}];
+          } else {
+            matchMaker.matchList[interest].push({id:String(userId),profile:(user.profile||null)});
+          }
         }
       }
     } else {
-      // console.log('user with no profile.interests', user);
-      if (matchMaker.matchList['no-topic'] === undefined) {
-        matchMaker.matchList['no-topic'] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
-      } else {
-        matchMaker.matchList['no-topic'].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
+      if (String(inUser.id) !== String(userId)) {
+        if (matchMaker.matchList['no-topic'] === undefined) {
+          matchMaker.matchList['no-topic'] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
+        } else {
+          matchMaker.matchList['no-topic'].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
+        }
       }
     }
-    // console.log('Matched matchList', matchMaker.matchList);
   });
 };
 matchMaker.blacklistMatchList = function(user) {
