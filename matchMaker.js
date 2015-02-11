@@ -5,33 +5,30 @@ matchMaker.matchList = {};
 matchMaker.populateMatchList = function(user, usersSnapshot) {
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
-    if (user.topics !== undefined) {
-      // console.log('user with topics', user.topics);
-      for (var ti = 0; ti < user.topics.length; ti++) {
-        var topic = user.topics[ti];
-        if (matchMaker.matchList[topic] === undefined) {
-          matchMaker.matchList[topic] = [String(user.id)];
+    if ((user.profile||{}).interests !== undefined) {
+      // console.log('user with profile.interests', user.profile.interests);
+      for (var ti = 0; ti < user.profile.interests.length; ti++) {
+        var interest = user.profile.interests[ti];
+        if (matchMaker.matchList[interest] === undefined) {
+          matchMaker.matchList[interest] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
         } else {
-          matchMaker.matchList[topic].push(String(user.id));
+          matchMaker.matchList[interest].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
         }
       }
     } else {
-      // console.log('user with no topics', user);
+      // console.log('user with no profile.interests', user);
       if (matchMaker.matchList['no-topic'] === undefined) {
-        matchMaker.matchList['no-topic'] = [String(user.id||user.data['user_id'])];
+        matchMaker.matchList['no-topic'] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
       } else {
-        matchMaker.matchList['no-topic'].push(String(user.id||user.data['user_id']));
+        matchMaker.matchList['no-topic'].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
       }
     }
     // console.log('Matched matchList', matchMaker.matchList);
   });
-  return matchMaker.matchList;
 };
 matchMaker.blacklistMatchList = function(user) {
-
   var topics = (user.topics || ['debug topics'])
   var blacklist = (user.blacklist || ['debug blacklist'])
-
   for (var ti = topics.length - 1; ti >= 0; ti--) {
     var topic = topics[ti];
     //start with all the user's topics
@@ -45,6 +42,11 @@ matchMaker.blacklistMatchList = function(user) {
         var itIsBlacklisted = false;
         for (var i = matchesForTopic.length - 1; i >= 0; i--) {
           var matchForTopic = matchesForTopic[i];
+
+          if(String(user.id) === String(matchForTopic)){
+            itIsBlacklisted = true;
+          }
+
           //go through the matched topic's user ids
           if (String(blacklisted) === String(matchForTopic)) {
             //flag this matchForTopic for removal
@@ -61,11 +63,12 @@ matchMaker.blacklistMatchList = function(user) {
       }
     }
   }
-  return matchMaker.matchList;
+  console.log('matchMaker.matchlist', matchMaker.matchlist);
 };
 
 matchMaker.getMatchList = function(user, usersSnapshot) {
   matchMaker.matchList = {};
+  console.log('get match list for user',user);
   matchMaker.populateMatchList(user, usersSnapshot);
   matchMaker.blacklistMatchList(user, usersSnapshot);
   return matchMaker.matchList;
