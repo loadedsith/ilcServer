@@ -233,8 +233,6 @@ var getUserProfile = function(request, socket) {
 
 var setUserProfile = function(user, socket) {
   var profile = user.user.profile;
-  console.log('+_+_=_=_=_=_=_=-set user profile, user: ', user);
-  console.log('profile', profile);
   if((profile||{}).name !== undefined){
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
       console.log('updated profile', profile || error);
