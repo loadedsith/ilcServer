@@ -107,8 +107,9 @@ var openFirebaseRoomForUsers = function(users, socket) {
 
 var facebookTokenValid = function(accessToken, callback) {
   if (accessToken === undefined) {
-    console.error('---------abort access token is missing');
-    console.log('callback', callback);
+    console.log('---------abort access token is missing. would have called this function');
+    console.log(callback);
+    console.log('--------');
     return;
   }
 
@@ -257,19 +258,21 @@ var makeRoomPairName = function(userA, userB) {
 var sendMessage = function(user, room, message, socket) {
   console.log('Send Message: room, message', room, message);
   var roomName = makeRoomPairName(user.data['user_id'], room);
-  var messageObject = {
-    date: new Date().getTime(),
-    user:user,
-    message:message
-  };
-  roomsRef.child(roomName).push(messageObject, function() {
-    // console.log('successfully posted message');
-    messageObject.room = room;
-    socket.emit('message sent', messageObject);
-  })
-  // usersRef.child(user.data['user_id']).child('profile').set(profile, function(error) {
-//      socket.emit('user profile', profile || error);
-//    });
+  if(message!==undefined){
+    var messageObject = {
+      date: new Date().getTime(),
+      user:user,
+      message:message
+    };
+
+    roomsRef.child(roomName).push(messageObject, function() {
+      // console.log('successfully posted message');
+      messageObject.room = room;
+      socket.emit('message sent', messageObject);
+    })
+  } else {
+    console.log('not sending message, as it was empty');
+  }
 };
 
 var getUserMatches = function(user, socket) {
