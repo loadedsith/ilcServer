@@ -1,3 +1,4 @@
+console = require('better-console');
 
 var firebase = require('firebase');
 var matchMaker = {};
@@ -10,8 +11,6 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
       // console.log('user with profile.interests', user.profile.interests);
       for (var ti = 0; ti < user.profile.interests.length; ti++) {
         var interest = user.profile.interests[ti];
-        console.log('inUser.data[\'user_id\']', inUser.data['user_id']);
-        console.log('userId', userId);
         if (String(inUser.id) !== String(userId)) {
           //Skip yourself son
           if (matchMaker.matchList[interest] === undefined) {
@@ -69,12 +68,10 @@ matchMaker.blacklistMatchList = function(user) {
       }
     }
   }
-  console.log('matchMaker.matchlist', matchMaker.matchlist);
 };
 
 matchMaker.getMatchList = function(user, usersSnapshot) {
   matchMaker.matchList = {};
-  console.log('get match list for user',user);
   matchMaker.populateMatchList(user, usersSnapshot);
   matchMaker.blacklistMatchList(user, usersSnapshot);
   return matchMaker.matchList;

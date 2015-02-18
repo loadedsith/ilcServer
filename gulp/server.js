@@ -3,11 +3,12 @@ var gulp = require('gulp')
   , jshint = require('gulp-jshint')
 
 gulp.task('server', function() {
-  nodemon({ 
+  nodemon({
     script: 'index.js',
     ext: 'html js',
+    env: { 'NODE_ENV': 'development' },
     ignore: ['gulp/*.js'],
-    nodeArgs: ['--debug'] 
+    nodeArgs: ['--debug']
   })
    .on('change', ['jshint'])//, 'jscs'
    .on('restart', function () {

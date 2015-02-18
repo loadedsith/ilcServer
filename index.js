@@ -1,6 +1,10 @@
+var originalConsole = console;
+
+console = require('better-console');
+console.time("loaded in: ");
+
 var httpPort = 9999;
 var socketPort = 5000;
-
 var restify = require('restify');
 var socketio = require('socket.io')(socketPort);
 var fs = require('fs');
@@ -40,7 +44,7 @@ var roomsRef = new firebase(firebaseUrl + '/rooms/');
 var usersRef = new firebase(firebaseUrl + '/users/');
 
 var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
-  console.log('subscribe user to : ',firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
+  console.info('subscribe user to : ',firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
   var updateRef = new firebase(firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
   updateRef.orderByChild('date').once('value', function(rooms) {
     socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
@@ -59,7 +63,7 @@ var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
   if (user.rooms !== undefined) {
     for (var roomKey in user.rooms) {
-      console.log('sub to ', roomKey);
+      console.info('subscribe user:' + userId + ' to ', roomKey);
       var room = user.rooms[roomKey];
 
       var roomName = makeRoomPairName(userId,room);
@@ -90,7 +94,7 @@ var openFirebaseRoomForUsers = function(users, socket) {
 
     userRef.child('rooms').push(String(users.remoteId), function(error) {
       if (error !== null) {
-        console.log('error pushing room', error);
+        console.warn('error pushing room', error);
       }
     });
 
@@ -102,15 +106,14 @@ var openFirebaseRoomForUsers = function(users, socket) {
     });
 
   } else {
-    console.log('couldnt create room, please provide a object with properties localId and remoteId, got: ', users);
+    console.warn('couldnt create room, please provide a object with properties localId and remoteId, got: ', users);
   }
 };
 
 var facebookTokenValid = function(accessToken, callback) {
   if (accessToken === undefined) {
-    console.log('---------abort access token is missing. would have called this function');
-    console.log(callback);
-    console.log('--------');
+    console.warn('abort access token is missing. would have called this function:');
+    originalConsole.log(callback);
     return;
   }
 
@@ -126,30 +129,33 @@ var facebookTokenValid = function(accessToken, callback) {
     now = now / 1000;
     if (cachedUserResponse.data['expires_at'] > now) {
       if (typeof callback === 'function') {
-        console.log('using cached facebook authority');
+        console.info('using cached facebook authority');
         callback(cachedUserResponse);
         foundCachedToken = true;
       }
     }
   }
   if (foundCachedToken === false) {
-    console.log('new facebook request must be made');
-    console.log('resource', resource);
+    console.info('new facebook request must be made');
     fb.api(resource, function(response) {
-      console.log('-----response', response);
       if (response.data !== undefined) {
         if (response.data['is_valid'] === true) {
-          console.log('granted authority by facebook');
+          console.info('granted authority by facebook');
           response.data.setTime = new Date().getTime();
           tokensByUserId[accessToken] = response;
           if (typeof callback === 'function') {
             callback(response);
           }
         } else {
-          console.log('response.is_valid is not true', response);
+          console.warn('response.is_valid is not true');
+          console.dir([response, resource]);
+          console.warn('abort access token is missing. would have called this function:');
+          debugger;
+          originalConsole.log('callback');
+          originalConsole.log(callback);
         }
       } else {
-        console.log('response.data is missing', response);
+        console.warn('response.data is missing', response);
       }
     });
   }
@@ -170,12 +176,9 @@ var updateUser = function(user, socket) {
       };
 
       usersRef.child(user.data['user_id']).set(user,function(err) {
-        console.log('created user'+user.data['user_id']);
-        if(err === null){
-
-        } else {
-
-          console.log('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
+        console.info('created user'+user.data['user_id']);
+        if(err !== null){
+          console.warn('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
         }
         updateUser(user,socket);
       });
@@ -205,14 +208,14 @@ var getUserProfile = function(request, socket) {
     user = request.user;
   }
 
-  console.log('looking for ' + user + ' profile');
+  console.info('looking for ' + user + ' profile');
   usersRef.child(user).once('value', function(snapshot) {
 
     var value = snapshot.val();
     // console.log('> found' , value);
 
     if (value === null || value === undefined) {
-      console.log('emit null user profile');
+      console.warn(' user not found, emit null user profile');
       socket.emit('user profile', {});
     }else{
       if(value.profile === undefined){
@@ -226,8 +229,7 @@ var getUserProfile = function(request, socket) {
           'test1:':Math.floor(Math.random()*1000)
         };
       }
-      // socket.emit('user profile', (value.profile || {}));//send back the whole user.
-      console.log('emit user profile',value);
+      console.info('emit user profile');
       socket.emit('user profile', (value || {}));
     }
   });
@@ -235,29 +237,30 @@ var getUserProfile = function(request, socket) {
 
 var setUserProfile = function(user, socket) {
   var profile = user.user.profile;
+  console.info('setUserProfile, profilein:',profile);
   if((profile||{}).name !== undefined){
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
-      console.log('updated profile', profile || error);
+      console.info('updated profile', profile || error);
       socket.emit('user profile update', profile || error);
     });
   }else{
-    console.log('couldnt update user profile, as profile was unset');
+    console.warn('couldnt update user profile, as profile was unset');
   }
 };
 
 var makeRoomPairName = function(userA, userB) {
   var roomName;
-  if ( parseInt(userA) > parseInt(userB)) {
+  if (parseInt(userA) > parseInt(userB)) {
     roomName = String(userB + '+' + userA);
   } else {
     roomName = String(userA + '+' + userB);
   }
-
   return roomName;
 };
 
 var sendMessage = function(user, room, message, socket) {
-  console.log('Send Message: room, message', room, message);
+  console.info('Send Message: room, message', room, message);
+  console.dir([room, message]);
   var roomName = makeRoomPairName(user.data['user_id'], room);
   if(message!==undefined){
     var messageObject = {
@@ -272,7 +275,7 @@ var sendMessage = function(user, room, message, socket) {
       socket.emit('message sent', messageObject);
     });
   } else {
-    console.log('not sending message, as it was empty');
+    console.warn('not sending message, as it was empty');
   }
 };
 
@@ -284,10 +287,8 @@ var getUserMatches = function(user, socket) {
 };
 
 var closeRoom = function(config, user, socket){
-  console.log('closing room',config);
-  console.log('user', user);
+  console.info('closing room',config);
   usersRef.child(user.data['user_id']).child('profile').child('rooms').once('value', function(snap) {
-    console.log('snap.val()', snap.val());
     var rooms = snap.val();
     var removeThisOne;
     if (rooms !== undefined && rooms !== null) {
@@ -298,7 +299,7 @@ var closeRoom = function(config, user, socket){
       }
       rooms.splice(removeThisOne, 1);
       usersRef.child(user.data['user_id']).child('profile').child('rooms').set(rooms,function(results) {
-        console.log('room removed', config.room);
+        console.info('room removed', config.room);
         socket.emit('room removed', config.room);
       });
     }
@@ -307,10 +308,10 @@ var closeRoom = function(config, user, socket){
 
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
-  console.log('got connection, id: ',socketId);
+  console.info('got connection, id: ',socketId);
 
   socket.on('disconnectMe', function () {
-    console.log('disconnected user socketId' + socketId);
+    console.info('disconnected user socketId' + socketId);
     socket.disconnect();
   });
 
@@ -321,12 +322,12 @@ io.sockets.on('connection', function(socket) {
       data = {signed:'gph'};
     }
 
-    console.log('recieved ping', data);
+    console.info('recieved ping', data);
     socket.emit('pong', data);
   });
 
   socket.on('set profile', function(user) {
-    console.log('set profile user', user);
+    console.info('set profile user', user);
     facebookTokenValid(user.accessToken, function(fbUser) {
       setUserProfile(user, socket);
     });
@@ -339,7 +340,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('send message', function(config) {
-    console.log('socket on: send message: ', config);
+    console.info('socket on: send message: ', config);
     var accessToken = config.accessToken;
     var message = config.message;
     var room = config.room;
@@ -349,7 +350,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('get profile', function(requestedUser) {
-    console.log('get user profile: ', requestedUser.user);
+    console.info('get user profile: ', requestedUser.user);
     facebookTokenValid(requestedUser.accessToken, function(facebookUser) {
       //TODO: this allows any user to request any other user's profile
       // it should be secured to only get matches' profiles, but that would be
@@ -359,24 +360,24 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('close room', function(config) {
-    console.log('close room request received');
+    console.info('close room request received');
     facebookTokenValid(config.accessToken, function(user) {
       closeRoom(config, user, socket);
     });
   });
 
   socket.on('open room', function(users) {
-    console.log('received open request: Users: ', users);
+    console.info('received open request: Users: ', users);
     facebookTokenValid(users.accessToken, function(user) {
-      console.log('opening room');
+      console.info('opening room');
       openFirebaseRoomForUsers(users, socket);
     });
   });
 
   socket.on('login validator', function(accessToken) {
-    console.log('received login validator access token: ',accessToken);
+    console.info('received login validator access token: ',accessToken);
     facebookTokenValid(accessToken, function(user) {
-      console.log('This guy is logged in:', user);
+      console.info('This guy is logged in:', user);
       socket.emit('user valid', user);
       getUserProfile(user, socket);
       getUserMatches(user, socket);
@@ -388,4 +389,5 @@ io.sockets.on('connection', function(socket) {
 
 server.listen(httpPort, function() {
   console.log('socket.io server listening at %s', server.url);
+  console.timeEnd("loaded in: ");
 });
