@@ -283,11 +283,33 @@ var getUserMatches = function(user, socket) {
   });
 };
 
+var closeRoom = function(config, user, socket){
+  console.log('closing room',config);
+  console.log('user', user);
+  usersRef.child(user.data['user_id']).child('profile').child('rooms').once('value', function(snap) {
+    console.log('snap.val()', snap.val());
+    var rooms = snap.val();
+    var removeThisOne;
+    if (rooms !== undefined && rooms !== null) {
+      for (var i = rooms.length - 1; i >= 0; i--) {
+        if (rooms[i]===config.room){
+          removeThisOne = i;
+        }
+      }
+      rooms.splice(removeThisOne, 1);
+      usersRef.child(user.data['user_id']).child('profile').child('rooms').set(rooms,function(results) {
+        console.log('room removed', config.room);
+        socket.emit('room removed', config.room);
+      });
+    }
+  });
+};
+
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
+  console.log('got connection, id: ',socketId);
 
-
-  socket.on('disconnect', function () {
+  socket.on('disconnectMe', function () {
     console.log('disconnected user socketId' + socketId);
     socket.disconnect();
   });
@@ -333,6 +355,13 @@ io.sockets.on('connection', function(socket) {
       // it should be secured to only get matches' profiles, but that would be
       // very difficult at this point
       getUserProfile(requestedUser, socket);
+    });
+  });
+
+  socket.on('close room', function(config) {
+    console.log('close room request received');
+    facebookTokenValid(config.accessToken, function(user) {
+      closeRoom(config, user, socket);
     });
   });
 
