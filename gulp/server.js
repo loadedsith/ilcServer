@@ -9,7 +9,7 @@ gulp.task('server', function() {
     ignore: ['gulp/*.js'],
     nodeArgs: ['--debug'] 
   })
-   .on('change', ['jshint', 'jscs'])
+   .on('change', ['jshint'])//, 'jscs'
    .on('restart', function () {
      console.log('restarted!')
    });

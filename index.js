@@ -59,6 +59,7 @@ var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
   if (user.rooms !== undefined) {
     for (var roomKey in user.rooms) {
+      console.log('sub to ', roomKey);
       var room = user.rooms[roomKey];
 
       var roomName = makeRoomPairName(userId,room);
@@ -253,7 +254,7 @@ var makeRoomPairName = function(userA, userB) {
   }
 
   return roomName;
-}
+};
 
 var sendMessage = function(user, room, message, socket) {
   console.log('Send Message: room, message', room, message);
@@ -269,7 +270,7 @@ var sendMessage = function(user, room, message, socket) {
       // console.log('successfully posted message');
       messageObject.room = room;
       socket.emit('message sent', messageObject);
-    })
+    });
   } else {
     console.log('not sending message, as it was empty');
   }

@@ -59,11 +59,6 @@ angular.module('ilcServer').controller('MainController', ['$scope', '$socket', f
 
   $scope.rooms = [];
 
-  $socket.on('rooms update', function(room) {
-    console.log('rooms update', room);
-    $scope.rooms.push(String(room.remoteId));
-  });
-
   $socket.on('rooms set', function(rooms) {
     console.log('rooms Set', rooms);
     $scope.rooms = rooms;
