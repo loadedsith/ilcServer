@@ -150,8 +150,6 @@ var facebookTokenValid = function(accessToken, callback) {
           console.warn('response.is_valid is not true');
           console.dir([response, resource]);
           console.warn('abort access token is missing. would have called this function:');
-          debugger;
-          originalConsole.log('callback');
           originalConsole.log(callback);
         }
       } else {
@@ -306,23 +304,46 @@ var closeRoom = function(config, user, socket){
   });
 };
 
+var setCurrentInterest = function(user, interest, socket) {
+  console.info('set currentInterest, interest-in:', interest);
+  console.info('set currentInterest, user-in:', user);
+  if(interest !== undefined){
+    usersRef.child(user.data['user_id']).child('profile').child('currentInterest').set(interest, function(error) {
+      console.info('updated currentInterest', interest || error);
+      socket.emit('user current interest update', interest || error);
+    });
+  }else{
+    console.warn('couldnt set currentInterest, as it was unset: ', interest);
+  }
+};
+
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
-  console.info('got connection, id: ',socketId);
+  console.warn('got connection, id: ',socketId);
 
   socket.on('disconnectMe', function () {
     console.info('disconnected user socketId' + socketId);
     socket.disconnect();
   });
 
+  socket.on('set current interest', function(config) {
+    var interest = (((config||{}).user || {}).profile||{}).currentInterest;
+    if (interest !== undefined){
+      facebookTokenValid(config.accessToken, function(user) {
+        setCurrentInterest(user, interest, socket)
+      });
+    }else{
+      console.log('interest was undefined');
+    }
+  })
   socket.on('ping', function(data) {
     if(data){
       data.signed = 'gph';
     }else{
       data = {signed:'gph'};
     }
-
-    console.info('recieved ping', data);
+    console.log('ping', data);
+    console.info('received ping', data);
     socket.emit('pong', data);
   });
 
