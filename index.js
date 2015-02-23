@@ -23,6 +23,7 @@ try{
 }
 if(firebaseUrl===undefined){
   console.log('firebaseUrl was undefined, something is wrong with the environment.');
+  process.exit(1);
 }
 
 var tokensByUserId = {};
@@ -50,6 +51,7 @@ try{
 }
 if(appSecret===undefined){
   console.log('appSecret was undefined, something is wrong with the environment.');
+  process.exit(1);
 }
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
