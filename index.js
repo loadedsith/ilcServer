@@ -3,8 +3,8 @@ var originalConsole = console;
 console = require('better-console');
 console.time("loaded in: ");
 
-var httpPort = process.env.HTTPPORT|| 9999;
-var socketPort =  process.env.PORT||5000;
+var httpPort = process.env.HTTPPORT || 9999;
+var socketPort =  process.env.PORT || 5000;
 var restify = require('restify');
 var socketio = require('socket.io')(socketPort);
 var fs = require('fs');
@@ -338,6 +338,7 @@ var setCurrentInterest = function(user, interest, socket) {
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
   console.warn('got connection, id: ',socketId);
+  console.log('got connection, id: ',socketId);
 
   socket.on('disconnectMe', function () {
     console.info('disconnected user socketId' + socketId);
