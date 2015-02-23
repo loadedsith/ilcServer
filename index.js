@@ -15,8 +15,15 @@ var firebase = require('firebase');
 var matchMaker = require('./matchMaker');
 
 var firebaseUrl;
-var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
-firebaseUrl = firebaseUrlFile[0];
+try{
+  var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
+  firebaseUrl = firebaseUrlFile[0];
+}catch(e){
+  firebaseUrl = process.env.firebaseUrl;
+}
+if(firebaseUrl===undefined){
+  console.log('firebaseUrl was undefined, something is wrong with the environment.');
+}
 
 var tokensByUserId = {};
 
@@ -35,9 +42,15 @@ server.get(/.*/, restify.serveStatic({
 var users = [];
 
 var appSecret;
-
-var fbAppSecretFile = fs.readFileSync(__dirname + '/fbAppSecret').toString().split('\n');
-appSecret = fbAppSecretFile[0];
+try{
+  var fbAppSecretFile = fs.readFileSync(__dirname + '/fbAppSecret').toString().split('\n');
+  appSecret = fbAppSecretFile[0];
+}catch(e){
+  appSecret = process.env.fbAppSecret;
+}
+if(appSecret===undefined){
+  console.log('appSecret was undefined, something is wrong with the environment.');
+}
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
 
