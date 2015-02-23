@@ -69,10 +69,9 @@ var pipeFirebaseToSocket = function(user, socket) {
       var roomName = makeRoomPairName(userId,room);
 
       createRoomEmitsForUserOnSocket(roomName, userId, socket);
-
     }
   } else {
-    user.rooms = {};
+    user.rooms = [];
   }
   socket.emit('rooms set', user.rooms);
 };
@@ -199,7 +198,7 @@ var updateUser = function(user, socket) {
 
 var getUserProfile = function(request, socket) {
   var user;
-  // console.log('get user profile: request', request);
+  console.log('get user profile: request', request);
   if (request.data !== undefined) {
     user = request.data['user_id'];
   }else{
