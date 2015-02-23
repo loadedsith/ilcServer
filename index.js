@@ -3,8 +3,8 @@ var originalConsole = console;
 console = require('better-console');
 console.time("loaded in: ");
 
-var httpPort = process.env.PORT|| 9999;
-var socketPort =  process.env.SOCKET||5000;
+var httpPort = process.env.HTTPPORT|| 9999;
+var socketPort =  process.env.PORT||5000;
 var restify = require('restify');
 var socketio = require('socket.io')(socketPort);
 var fs = require('fs');
