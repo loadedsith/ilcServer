@@ -4,7 +4,7 @@
   "devDependencies": {
   },
   "engines": {
-    "node": ">=0.10.0"
+    "node": "0.10.35"
   },
   "dependencies": {
     "better-console": "^0.2.3",

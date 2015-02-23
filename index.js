@@ -3,8 +3,8 @@ var originalConsole = console;
 console = require('better-console');
 console.time("loaded in: ");
 
-var httpPort = 9999;
-var socketPort = 5000;
+var httpPort = process.env.PORT|| 9999;
+var socketPort =  process.env.SOCKET||5000;
 var restify = require('restify');
 var socketio = require('socket.io')(socketPort);
 var fs = require('fs');
@@ -24,6 +24,8 @@ try{
 if(firebaseUrl===undefined){
   console.log('firebaseUrl was undefined, something is wrong with the environment.');
   process.exit(1);
+}else{
+  console.log('got env vars 1/2');
 }
 
 var tokensByUserId = {};
@@ -52,6 +54,8 @@ try{
 if(appSecret===undefined){
   console.log('appSecret was undefined, something is wrong with the environment.');
   process.exit(1);
+}else{
+  console.log('got env vars 2/2');
 }
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
