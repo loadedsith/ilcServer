@@ -7,14 +7,20 @@ var fb = require('fb');
 
 var httpPort = process.env.HTTPPORT || 9999;
 var socketPort =  process.env.PORT || 5000;
-var restify = require('restify');
-var socketio = require('socket.io')(socketPort);
+var http = require('http');
+var express = require('express');
+var app = express();
+var server = http.Server(app);
+var socketio = require('socket.io')(server);
 
-var server = restify.createServer({
-  name: 'ilcServer'
-});
+// app.use(express.static(__dirname + "/"));
 
-var io = socketio.listen(server);
+// var server = http.createServer(app);
+
+server.listen(socketPort);
+
+// var io = socketio.listen({server:server});
+var io = socketio;
 
 var tokensByUserId = {};
 
@@ -22,15 +28,17 @@ var firebase = require('firebase');
 
 var matchMaker = require('./matchMaker');
 
-server.get(/.*/, restify.serveStatic({
-  'directory': __dirname,
-  'default': './app/index.html',
-  'maxAge': 0
-}));
+
+// server.get(/.*/, restify.serveStatic({
+//   'directory': __dirname,
+//   'default': './app/index.html',
+//   'maxAge': 0
+// }));
 
 var users = [];
 
 var fs = require('fs');
+
 var firebaseUrl;
 try{
   var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
@@ -350,12 +358,12 @@ io.sockets.on('connection', function(socket) {
     var interest = (((config||{}).user || {}).profile||{}).currentInterest;
     if (interest !== undefined){
       facebookTokenValid(config.accessToken, function(user) {
-        setCurrentInterest(user, interest, socket)
+        setCurrentInterest(user, interest, socket);
       });
     }else{
       console.log('interest was undefined');
     }
-  })
+  });
   socket.on('ping', function(data) {
     if(data){
       data.signed = 'gph';
@@ -428,7 +436,7 @@ io.sockets.on('connection', function(socket) {
 
 });
 
-console.log('socket.io server listening at %s', server.url, socketPort);
+console.log('socket.io server listening at %s', socketPort);
 // server.listen(socketPort, function() {
 //   console.log('socket.io server listening at %s, socket: %s', server.url, socketPort);
 //   console.timeEnd("loaded in: ");
