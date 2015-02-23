@@ -3,6 +3,14 @@ console = require('better-console');
 var firebase = require('firebase');
 var matchMaker = {};
 matchMaker.matchList = {};
+matchMaker.isBlacklisted = function(interest, blacklist) {
+  for (var i = blacklist.length - 1; i >= 0; i--) {
+    if (interest === blacklist[i]) {
+      return true;
+    }
+  }
+  return false;
+};
 matchMaker.populateMatchList = function(inUser, usersSnapshot) {
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
@@ -11,12 +19,22 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
       // console.log('user with profile.interests', user.profile.interests);
       for (var ti = 0; ti < user.profile.interests.length; ti++) {
         var interest = user.profile.interests[ti];
-        if (String(inUser.id) !== String(userId)) {
+        if (String(inUser.data['user_id']) !== String(userId)) {
           //Skip yourself son
-          if (matchMaker.matchList[interest] === undefined) {
-            matchMaker.matchList[interest] = [{id:String(userId),profile:(user.profile||null)}];
-          } else {
-            matchMaker.matchList[interest].push({id:String(userId),profile:(user.profile||null)});
+          delete user.profile.rooms;
+          var profile = {
+            id: String(userId),
+            profile: (user.profile || null)
+          };
+          var blacklisted = matchMaker.isBlacklisted(interest, (user.profile.blacklist || []));
+          if (!blacklisted) {
+            if (matchMaker.matchList[interest] === undefined) {
+              matchMaker.matchList[interest] = [
+                profile
+              ];
+            } else {
+              matchMaker.matchList[interest].push(profile);
+            }
           }
         }
       }
