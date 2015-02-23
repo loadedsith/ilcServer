@@ -427,6 +427,6 @@ io.sockets.on('connection', function(socket) {
 });
 
 server.listen(httpPort, function() {
-  console.log('socket.io server listening at %s', server.url);
+  console.log('socket.io server listening at %s, socket: %s', server.url, socketPort);
   console.timeEnd("loaded in: ");
 });
