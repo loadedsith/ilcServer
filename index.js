@@ -338,7 +338,6 @@ var setCurrentInterest = function(user, interest, socket) {
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
   console.warn('got connection, id: ',socketId);
-  console.log('got connection, id: ',socketId);
 
   socket.on('disconnectMe', function () {
     console.info('disconnected user socketId' + socketId);
@@ -417,7 +416,7 @@ io.sockets.on('connection', function(socket) {
   socket.on('login validator', function(accessToken) {
     console.info('received login validator access token: ',accessToken);
     facebookTokenValid(accessToken, function(user) {
-      console.info('This guy is logged in:', user);
+      console.info('This guy is logged in:', (user.data['user_id'] || user));
       socket.emit('user valid', user);
       getUserProfile(user, socket);
       getUserMatches(user, socket);
