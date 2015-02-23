@@ -3,38 +3,24 @@ var originalConsole = console;
 console = require('better-console');
 console.time("loaded in: ");
 
+var fb = require('fb');
+
 var httpPort = process.env.HTTPPORT || 9999;
 var socketPort =  process.env.PORT || 5000;
 var restify = require('restify');
 var socketio = require('socket.io')(socketPort);
-var fs = require('fs');
-var fb = require('fb');
-
-var firebase = require('firebase');
-
-var matchMaker = require('./matchMaker');
-
-var firebaseUrl;
-try{
-  var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
-  firebaseUrl = firebaseUrlFile[0];
-}catch(e){
-  firebaseUrl = process.env.firebaseUrl;
-}
-if(firebaseUrl===undefined){
-  console.log('firebaseUrl was undefined, something is wrong with the environment.');
-  process.exit(1);
-}else{
-  console.log('got env vars 1/2');
-}
-
-var tokensByUserId = {};
 
 var server = restify.createServer({
   name: 'ilcServer'
 });
 
 var io = socketio.listen(server);
+
+var tokensByUserId = {};
+
+var firebase = require('firebase');
+
+var matchMaker = require('./matchMaker');
 
 server.get(/.*/, restify.serveStatic({
   'directory': __dirname,
@@ -44,6 +30,21 @@ server.get(/.*/, restify.serveStatic({
 
 var users = [];
 
+var fs = require('fs');
+var firebaseUrl;
+try{
+  var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
+  firebaseUrl = firebaseUrlFile[0];
+}catch(e){
+  firebaseUrl = process.env.firebaseUrl;
+}
+if (firebaseUrl === undefined) {
+  console.log('firebaseUrl was undefined, something is wrong with the environment.');
+  process.exit(1);
+} else {
+  console.log('got env vars 1/2');
+}
+
 var appSecret;
 try{
   var fbAppSecretFile = fs.readFileSync(__dirname + '/fbAppSecret').toString().split('\n');
@@ -51,10 +52,10 @@ try{
 }catch(e){
   appSecret = process.env.fbAppSecret;
 }
-if(appSecret===undefined){
+if (appSecret === undefined) {
   console.log('appSecret was undefined, something is wrong with the environment.');
   process.exit(1);
-}else{
+} else {
   console.log('got env vars 2/2');
 }
 
