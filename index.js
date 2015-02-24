@@ -41,7 +41,7 @@ if (firebaseUrl === undefined) {
   console.log('firebaseUrl was undefined, something is wrong with the environment.');
   process.exit(1);
 } else {
-  console.log('got env vars 1/2');
+  console.log('got env vars 1/3');
 }
 
 var appSecret;
@@ -55,8 +55,23 @@ if (appSecret === undefined) {
   console.log('appSecret was undefined, something is wrong with the environment.');
   process.exit(1);
 } else {
-  console.log('got env vars 2/2');
+  console.log('got env vars 2/3');
 }
+
+var appId;
+try{
+  var fbAppIdFile = fs.readFileSync(__dirname + '/fbAppId').toString().split('\n');
+  appId = fbAppIdFile[0];
+}catch(e){
+  appId = process.env.appId;
+}
+if (appSecret === undefined) {
+  console.log('appId was undefined, something is wrong with the environment.');
+  process.exit(1);
+} else {
+  console.log('got env vars 3/3');
+}
+
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
 
@@ -135,7 +150,6 @@ var facebookTokenValid = function(accessToken, callback) {
     return;
   }
 
-  var appId = '676670295780686';
   var appAccessToken = appId + '|' + appSecret;
   //https://graph.facebook.com/debug_token?input_token={id}&access_token={appAccessToken}
   var resource = 'debug_token?input_token=' + accessToken + '&access_token=' + appAccessToken;
