@@ -172,6 +172,7 @@ var facebookTokenValid = function(accessToken, callback) {
         }
       } else {
         console.warn('response.data is missing', response);
+        console.log('resource', resource);
       }
     });
   }
