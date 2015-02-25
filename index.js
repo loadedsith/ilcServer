@@ -415,6 +415,7 @@ io.sockets.on('connection', function(socket) {
   socket.on('login validator', function(accessToken) {
     console.info('received login validator accessToken length: ',accessToken.length);
     facebookTokenValid(accessToken, function(user) {
+      user.includeNoMatches = false;
       console.info('This guy is logged in:', (user.data['user_id'] || user));
       socket.emit('user valid', user);
       getUserProfile(user, socket);

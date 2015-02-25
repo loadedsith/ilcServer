@@ -39,11 +39,15 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
         }
       }
     } else {
-      if (String(inUser.id) !== String(userId)) {
+      if (String(inUser.id) !== String(userId) && inUser.includeNoMatches === true) {
+        var match = {
+            id:String(user.id || user.data['user_id']),
+            profile:(user.profile || null)
+          }
         if (matchMaker.matchList['no-topic'] === undefined) {
-          matchMaker.matchList['no-topic'] = [{id:String(user.id||user.data['user_id']),profile:(user.profile||null)}];
+          matchMaker.matchList['no-topic'] = [match];
         } else {
-          matchMaker.matchList['no-topic'].push({id:String(user.id||user.data['user_id']),profile:(user.profile||null)});
+          matchMaker.matchList['no-topic'].push(match);
         }
       }
     }
