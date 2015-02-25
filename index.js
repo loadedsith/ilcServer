@@ -30,47 +30,28 @@ server.get(/.*/, restify.serveStatic({
 var users = [];
 
 var fs = require('fs');
-var firebaseUrl;
-try{
-  var firebaseUrlFile = fs.readFileSync(__dirname + '/firebaseUrl').toString().split('\n');
-  firebaseUrl = firebaseUrlFile[0];
-}catch(e){
-  firebaseUrl = process.env.firebaseUrl;
-}
-if (firebaseUrl === undefined) {
-  console.log('firebaseUrl was undefined, something is wrong with the environment.');
-  process.exit(1);
-} else {
-  console.log('got env vars 1/3');
-}
+var herokuOrFileEnv = function(name) {
+  var anEnvVar;
+  var fromFile = false;
+  try{
+    var anEnvVarFile = fs.readFileSync(__dirname + '/' + name).toString().split('\n');
+    anEnvVar = anEnvVarFile[0];
+    fromFile = true;
+  }catch(e){
+    anEnvVar = process.env[name];
+  }
+  var whereFrom = fromFile ? 'fromFile' : 'fromHeroku';
+  if (anEnvVar === undefined) {
+    console.error(name + ' was undefined, something is wrong with the environment.');
+    process.exit(1);
+  }
+  console.log(name + ": ", anEnvVar, whereFrom);
+  return anEnvVar;
+};
 
-var appSecret;
-try{
-  var fbAppSecretFile = fs.readFileSync(__dirname + '/fbAppSecret').toString().split('\n');
-  appSecret = fbAppSecretFile[0];
-}catch(e){
-  appSecret = process.env.fbAppSecret;
-}
-if (appSecret === undefined) {
-  console.log('appSecret was undefined, something is wrong with the environment.');
-  process.exit(1);
-} else {
-  console.log('got env vars 2/3');
-}
-
-var appId;
-try{
-  var fbAppIdFile = fs.readFileSync(__dirname + '/fbAppId').toString().split('\n');
-  appId = fbAppIdFile[0];
-}catch(e){
-  appId = process.env.appId;
-}
-if (appSecret === undefined) {
-  console.log('appId was undefined, something is wrong with the environment.');
-  process.exit(1);
-} else {
-  console.log('got env vars 3/3');
-}
+var firebaseUrl = herokuOrFileEnv('firebaseUrl');
+var appSecret = herokuOrFileEnv('fbAppSecret');
+var appId = herokuOrFileEnv('fbAppId');
 
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
