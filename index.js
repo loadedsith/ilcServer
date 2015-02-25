@@ -1,7 +1,7 @@
 var originalConsole = console;
 
 console = require('better-console');
-console.time("loaded in: ");
+console.time('loaded in: ');
 var fb = require('fb');
 
 var httpPort = process.env.HTTPPORT || 9999;
@@ -232,7 +232,7 @@ var updateUser = function(user, socket) {
 
 var getUserProfile = function(request, socket) {
   var user;
-  console.log('get user profile: request', request);
+  console.log('get user profile: ', request.data['user_id'] );
   if (request.data !== undefined) {
     user = request.data['user_id'];
   }else{
@@ -268,10 +268,9 @@ var getUserProfile = function(request, socket) {
 
 var setUserProfile = function(user, socket) {
   var profile = user.user.profile;
-  console.info('setUserProfile, profilein:',profile);
+  console.info('setUserProfile, profilein:',user.user.data['user_id']);
   if((profile||{}).name !== undefined){
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
-      console.info('updated profile', profile || error);
       socket.emit('user profile update', profile || error);
     });
   }else{
@@ -309,7 +308,6 @@ var sendMessage = function(user, room, message, socket) {
     console.warn('not sending message, as it was empty');
   }
 };
-
 var getUserMatches = function(user, socket) {
   usersRef.on('value',function(usersSnapshot) {
     var matchList = matchMaker.getMatchList(user, usersSnapshot);
@@ -363,12 +361,12 @@ io.sockets.on('connection', function(socket) {
     var interest = (((config||{}).user || {}).profile||{}).currentInterest;
     if (interest !== undefined){
       facebookTokenValid(config.accessToken, function(user) {
-        setCurrentInterest(user, interest, socket)
+        setCurrentInterest(user, interest, socket);
       });
     }else{
       console.log('interest was undefined');
     }
-  })
+  });
   socket.on('ping', function(data) {
     if(data){
       data.signed = 'gph';
@@ -381,7 +379,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('set profile', function(user) {
-    console.info('set profile user', user);
+    console.info('set profile user', user.user.data['user_id']);
     facebookTokenValid(user.accessToken, function(fbUser) {
       setUserProfile(user, socket);
     });
@@ -429,7 +427,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('login validator', function(accessToken) {
-    console.info('received login validator access token: ',accessToken);
+    console.info('received login validator accessToken length: ',accessToken.length);
     facebookTokenValid(accessToken, function(user) {
       console.info('This guy is logged in:', (user.data['user_id'] || user));
       socket.emit('user valid', user);
@@ -443,5 +441,5 @@ io.sockets.on('connection', function(socket) {
 
 server.listen(httpPort, function() {
   console.log('socket.io server listening at %s, socket: %s', server.url, socketPort);
-  console.timeEnd("loaded in: ");
+  console.timeEnd('loaded in: ');
 });
