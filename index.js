@@ -68,7 +68,8 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
       if (first) {
         first = false;
       } else {
-        socket.emit('room update', {'room': roomName, 'snapshot': child.val()});
+        //TODO: Un sure why this was needed to be commented, it was because the server was returning 2 room updates per update... sort of arbitararlly chose this one...
+        // socket.emit('room update', {'room': roomName, 'snapshot': child.val()});
       }
     });
   });
