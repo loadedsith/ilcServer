@@ -59,16 +59,16 @@ var roomsRef = new firebase(firebaseUrl + '/rooms/');
 var usersRef = new firebase(firebaseUrl + '/users/');
 
 var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
-  console.info('subscribe user to : ',firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
-  var updateRef = new firebase(firebaseUrl + '/rooms/'+encodeURIComponent(roomName));
+  console.info('subscribe user to : ', 'rooms/' + roomName);
+  var updateRef = new firebase(firebaseUrl + '/rooms/' + encodeURIComponent(roomName));
   updateRef.orderByChild('date').once('value', function(rooms) {
-    socket.emit('room set', {'room':roomName, 'snapshot':rooms.val()});
+    socket.emit('room set', {'room': roomName, 'snapshot': rooms.val()});
     var first = true;
     updateRef.endAt().limitToLast(1).on('child_added', function(child) {
       if (first) {
         first = false;
       } else {
-        socket.emit('room update', {'room':roomName, 'snapshot':child.val()});
+        socket.emit('room update', {'room': roomName, 'snapshot': child.val()});
       }
     });
   });
@@ -77,17 +77,9 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
 var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
   if (user.rooms !== undefined) {
-    console.log('user.rooms', user.rooms);
     for (var i = user.rooms.length - 1; i >= 0; i--) {
       var room = user.rooms[i];
-      console.info('subscribe user:' + userId + ' to ', room);
-
-    // for (var roomKey in user.rooms) {
-      // console.info('subscribe user:' + userId + ' to ', roomKey);
-      // var room = user.rooms[roomKey];
-
       var roomName = makeRoomPairName(userId,room);
-
       createRoomEmitsForUserOnSocket(roomName, userId, socket);
     }
   } else {
@@ -147,18 +139,15 @@ var facebookTokenValid = function(accessToken, callback) {
     now = now / 1000;
     if (cachedUserResponse.data['expires_at'] > now) {
       if (typeof callback === 'function') {
-        console.info('using cached facebook authority');
         callback(cachedUserResponse);
         foundCachedToken = true;
       }
     }
   }
   if (foundCachedToken === false) {
-    console.info('new facebook request must be made');
     fb.api(resource, function(response) {
       if (response.data !== undefined) {
         if (response.data['is_valid'] === true) {
-          console.info('granted authority by facebook');
           response.data.setTime = new Date().getTime();
           tokensByUserId[accessToken] = response;
           if (typeof callback === 'function') {
@@ -218,14 +207,11 @@ var updateUser = function(user, socket) {
 
 var getUserProfile = function(request, socket) {
   var user;
-  console.log('get user profile: ', request.data['user_id'] );
   if (request.data !== undefined) {
     user = request.data['user_id'];
   }else{
     user = request.user;
   }
-
-  console.info('looking for ' + user + ' profile');
   usersRef.child(user).once('value', function(snapshot) {
 
     var value = snapshot.val();
@@ -246,7 +232,6 @@ var getUserProfile = function(request, socket) {
           'test1:':Math.floor(Math.random()*1000)
         };
       }
-      console.info('emit user profile');
       socket.emit('user profile', (value || {}));
     }
   });
@@ -254,7 +239,6 @@ var getUserProfile = function(request, socket) {
 
 var setUserProfile = function(user, socket) {
   var profile = user.user.profile;
-  console.info('setUserProfile, profilein:',user.user.data['user_id']);
   if((profile||{}).name !== undefined){
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
       socket.emit('user profile update', profile || error);
@@ -336,7 +320,7 @@ var setCurrentInterest = function(user, interest, socket) {
 
 io.sockets.on('connection', function(socket) {
   var socketId = socket.id;
-  console.warn('got connection, id: ',socketId);
+  console.warn('new connection, id: ',socketId);
 
   socket.on('disconnectMe', function () {
     console.info('disconnected user socketId' + socketId);
@@ -350,7 +334,7 @@ io.sockets.on('connection', function(socket) {
         setCurrentInterest(user, interest, socket);
       });
     }else{
-      console.log('interest was undefined');
+      console.warn('interest was undefined');
     }
   });
   socket.on('ping', function(data) {
@@ -413,10 +397,8 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('login validator', function(accessToken) {
-    console.info('received login validator accessToken length: ',accessToken.length);
     facebookTokenValid(accessToken, function(user) {
       user.includeNoMatches = false;
-      console.info('This guy is logged in:', (user.data['user_id'] || user));
       socket.emit('user valid', user);
       getUserProfile(user, socket);
       getUserMatches(user, socket);
