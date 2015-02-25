@@ -205,7 +205,7 @@ var updateUser = function(user, socket) {
   });
 };
 
-var getUserProfile = function(request, socket) {
+var getUserProfile = function(request, socket, callback) {
   var user;
   if (request.data !== undefined) {
     user = request.data['user_id'];
@@ -234,6 +234,10 @@ var getUserProfile = function(request, socket) {
       }
       socket.emit('user profile', (value || {}));
     }
+    if (typeof callback === 'function') {
+      callback(value)
+    }
+
   });
 };
 
@@ -400,8 +404,12 @@ io.sockets.on('connection', function(socket) {
     facebookTokenValid(accessToken, function(user) {
       user.includeNoMatches = false;
       socket.emit('user valid', user);
-      getUserProfile(user, socket);
-      getUserMatches(user, socket);
+      getUserProfile(user, socket, function(profile) {
+        //got profile
+        getUserMatches(profile, socket);
+
+      });
+      // getUserMatches(user, socket);
       updateUser(user, socket);
     });
   });
