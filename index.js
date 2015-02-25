@@ -77,9 +77,14 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
 var pipeFirebaseToSocket = function(user, socket) {
   var userId = user.userId;
   if (user.rooms !== undefined) {
-    for (var roomKey in user.rooms) {
-      console.info('subscribe user:' + userId + ' to ', roomKey);
-      var room = user.rooms[roomKey];
+    console.log('user.rooms', user.rooms);
+    for (var i = user.rooms.length - 1; i >= 0; i--) {
+      var room = user.rooms[i];
+      console.info('subscribe user:' + userId + ' to ', room);
+
+    // for (var roomKey in user.rooms) {
+      // console.info('subscribe user:' + userId + ' to ', roomKey);
+      // var room = user.rooms[roomKey];
 
       var roomName = makeRoomPairName(userId,room);
 
