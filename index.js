@@ -401,16 +401,21 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('login validator', function(accessToken) {
-    facebookTokenValid(accessToken, function(user) {
-      user.includeNoMatches = false;
-      socket.emit('user valid', user);
-      getUserProfile(user, socket, function(profile) {
-        //got profile
-        getUserMatches(profile, socket);
 
-      });
-      // getUserMatches(user, socket);
-      updateUser(user, socket);
+    facebookTokenValid(accessToken, function(user) {
+      if (socket.isLoggedIn === true) {
+        console.log('user is already logged in?');
+      }else{
+        socket.isLoggedIn = true;
+        user.includeNoMatches = false;
+        socket.emit('user valid', user);
+        getUserProfile(user, socket, function(profile) {
+          //got profile
+          getUserMatches(profile, socket);
+        });
+        // getUserMatches(user, socket);
+        updateUser(user, socket);
+      }
     });
   });
 
