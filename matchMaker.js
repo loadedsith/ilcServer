@@ -15,8 +15,7 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
     var userId = user.id || user.data['user_id'];
-    if ((user.profile || {}).interests !== undefined) {
-      console.log('user.profile.interests', user.profile.interests);
+    if ((inUser.profile || {}).interests !== undefined) {
       for (var ti = 0; ti < inUser.profile.interests.length; ti++) {
         var interest = inUser.profile.interests[ti];
         if (String(inUser.data['user_id']) !== String(userId)) {
