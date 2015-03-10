@@ -1,9 +1,9 @@
 console = require('better-console');
 
-var firebase = require('firebase');
 var matchMaker = {};
 matchMaker.matchList = {};
 matchMaker.isBlacklisted = function(interest, blacklist) {
+  'use strict';
   for (var i = blacklist.length - 1; i >= 0; i--) {
     if (interest === blacklist[i]) {
       return true;
@@ -13,7 +13,7 @@ matchMaker.isBlacklisted = function(interest, blacklist) {
 };
 
 matchMaker.populateMatchList = function(inUser, usersSnapshot) {
-
+  'use strict';
   // inUser is the user for whom the match list is being created
 
   if ((inUser.profile || {}).interests === undefined) {
@@ -28,7 +28,7 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
 
     //for every inUser interest
     for (var ti = inUser.profile.interests.length - 1; ti >= 0; ti--) {
-      var interest = inUser.profile.interests[ti]
+      var interest = inUser.profile.interests[ti];
 
       //Skip yourself son
       if (String(inUser.data['user_id']) !== String(userId)) {
@@ -64,19 +64,20 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
     //if the inUser is not the interest-user
     var isInUser = String(inUser.id) !== String(userId);
     if (isInUser && inUser.includeNoMatches === true) {
-       var match = {
-           id:String(user.id || user.data['user_id']),
-           profile:(user.profile || null)
-         }
-       if (matchMaker.matchList['no-topic'] === undefined) {
-         matchMaker.matchList['no-topic'] = [match];
-       } else {
-         matchMaker.matchList['no-topic'].push(match);
-       }
-     }
+      var match = {
+        id:String(user.id || user.data['user_id']),
+        profile:(user.profile || null)
+      };
+      if (matchMaker.matchList['no-topic'] === undefined) {
+        matchMaker.matchList['no-topic'] = [match];
+      } else {
+        matchMaker.matchList['no-topic'].push(match);
+      }
+    }
   });
 };
 matchMaker.blacklistMatchList = function(user) {
+  'use strict';
   var topics = (user.topics || ['debug topics']);
   var blacklist = (user.blacklist || ['debug blacklist']);
   for (var ti = topics.length - 1; ti >= 0; ti--) {
@@ -113,6 +114,7 @@ matchMaker.blacklistMatchList = function(user) {
 };
 
 matchMaker.getMatchList = function(user, usersSnapshot) {
+  'use strict';
   matchMaker.matchList = {};
   matchMaker.populateMatchList(user, usersSnapshot);
   matchMaker.blacklistMatchList(user, usersSnapshot);
