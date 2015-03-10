@@ -27,10 +27,9 @@ server.get(/.*/, restify.serveStatic({
   'maxAge': 0
 }));
 
-var users = [];
-
 var fs = require('fs');
 var herokuOrFileEnv = function(name) {
+  'use strict';
   var anEnvVar;
   var fromFile = false;
   try{
@@ -45,7 +44,7 @@ var herokuOrFileEnv = function(name) {
     console.error(name + ' was undefined, something is wrong with the environment.');
     process.exit(1);
   }
-  console.log(name + ": ", anEnvVar, whereFrom);
+  console.log(name + ': ', anEnvVar, whereFrom);
   return anEnvVar;
 };
 
@@ -59,6 +58,7 @@ var roomsRef = new firebase(firebaseUrl + '/rooms/');
 var usersRef = new firebase(firebaseUrl + '/users/');
 
 var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
+  'use strict';
   console.info('subscribe user to : ', 'rooms/' + roomName);
   var updateRef = new firebase(firebaseUrl + '/rooms/' + encodeURIComponent(roomName));
   updateRef.orderByChild('date').once('value', function(rooms) {
@@ -74,7 +74,19 @@ var createRoomEmitsForUserOnSocket = function(roomName, userId, socket) {
   });
 };
 
+var makeRoomPairName = function(userA, userB) {
+  'use strict';
+  var roomName;
+  if (parseInt(userA) > parseInt(userB)) {
+    roomName = String(userB + '+' + userA);
+  } else {
+    roomName = String(userA + '+' + userB);
+  }
+  return roomName;
+};
+
 var pipeFirebaseToSocket = function(user, socket) {
+  'use strict';
   var userId = user.userId;
   if (user.rooms !== undefined) {
     for (var i = user.rooms.length - 1; i >= 0; i--) {
@@ -89,10 +101,11 @@ var pipeFirebaseToSocket = function(user, socket) {
 };
 
 var openFirebaseRoomForUsers = function(users, socket) {
+  'use strict';
   if (users.localId !== undefined && users.remoteId !== undefined) {
     var sharedRoomKey = makeRoomPairName(users.localId, users.remoteId);
 
-    emptyRoom = [
+    var emptyRoom = [
       {
         'type': 'timeStamp',
         'time': new Date().getTime()
@@ -101,7 +114,7 @@ var openFirebaseRoomForUsers = function(users, socket) {
 
     roomsRef.child(sharedRoomKey).set(emptyRoom);
 
-    userRef = usersRef.child(users.localId);
+    var userRef = usersRef.child(users.localId);
 
     userRef.child('rooms').push(String(users.remoteId), function(error) {
       if (error !== null) {
@@ -122,6 +135,7 @@ var openFirebaseRoomForUsers = function(users, socket) {
 };
 
 var facebookTokenValid = function(accessToken, callback) {
+  'use strict';
   if (accessToken === undefined) {
     console.warn('abort access token is missing. would have called this function:');
     originalConsole.log(callback);
@@ -168,7 +182,8 @@ var facebookTokenValid = function(accessToken, callback) {
 };
 
 var updateUser = function(user, socket) {
-  userRef = usersRef.child(user.data['user_id']);
+  'use strict';
+  var userRef = usersRef.child(user.data['user_id']);
   userRef.on('value', function(snapshot) {
     var value = snapshot.val();
     if (value === null) {
@@ -206,6 +221,7 @@ var updateUser = function(user, socket) {
 };
 
 var getUserProfile = function(request, socket, callback) {
+  'use strict';
   var user;
   if (request.data !== undefined) {
     user = request.data['user_id'];
@@ -235,13 +251,14 @@ var getUserProfile = function(request, socket, callback) {
       socket.emit('user profile', (value || {}));
     }
     if (typeof callback === 'function') {
-      callback(value)
+      callback(value);
     }
 
   });
 };
 
 var setUserProfile = function(user, socket) {
+  'use strict';
   var profile = user.user.profile;
   if((profile||{}).name !== undefined){
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
@@ -252,17 +269,8 @@ var setUserProfile = function(user, socket) {
   }
 };
 
-var makeRoomPairName = function(userA, userB) {
-  var roomName;
-  if (parseInt(userA) > parseInt(userB)) {
-    roomName = String(userB + '+' + userA);
-  } else {
-    roomName = String(userA + '+' + userB);
-  }
-  return roomName;
-};
-
 var sendMessage = function(user, room, message, socket) {
+  'use strict';
   console.info('Send Message: room, message', room, message);
   console.dir([room, message]);
   var roomName = makeRoomPairName(user.data['user_id'], room);
@@ -282,14 +290,17 @@ var sendMessage = function(user, room, message, socket) {
     console.warn('not sending message, as it was empty');
   }
 };
+
 var getUserMatches = function(user, socket) {
+  'use strict';
   usersRef.on('value',function(usersSnapshot) {
     var matchList = matchMaker.getMatchList(user, usersSnapshot);
     socket.emit('got user matchList', matchList);
   });
 };
 
-var closeRoom = function(config, user, socket){
+var closeRoom = function(config, user, socket) {
+  'use strict';
   console.info('closing room',config);
   usersRef.child(user.data['user_id']).child('profile').child('rooms').once('value', function(snap) {
     var rooms = snap.val();
@@ -302,14 +313,15 @@ var closeRoom = function(config, user, socket){
       }
       rooms.splice(removeThisOne, 1);
       usersRef.child(user.data['user_id']).child('profile').child('rooms').set(rooms,function(results) {
-        console.info('room removed', config.room);
-        socket.emit('room removed', config.room);
+        console.info('room removed', config.room, results);
+        socket.emit('room removed', config.room, results);
       });
     }
   });
 };
 
 var setCurrentInterest = function(user, interest, socket) {
+  'use strict';
   console.info('set currentInterest, interest-in:', interest);
   console.info('set currentInterest, user-in:', user);
   if(interest !== undefined){
@@ -323,6 +335,7 @@ var setCurrentInterest = function(user, interest, socket) {
 };
 
 io.sockets.on('connection', function(socket) {
+  'use strict';
   var socketId = socket.id;
   console.warn('new connection, id: ',socketId);
 
@@ -354,7 +367,7 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('set profile', function(user) {
     console.info('set profile user', user.user.data['user_id']);
-    facebookTokenValid(user.accessToken, function(fbUser) {
+    facebookTokenValid(user.accessToken, function() {//args: fbUser
       setUserProfile(user, socket);
     });
   });
@@ -377,7 +390,7 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('get profile', function(requestedUser) {
     console.info('get user profile: ', requestedUser.user);
-    facebookTokenValid(requestedUser.accessToken, function(facebookUser) {
+    facebookTokenValid(requestedUser.accessToken, function() {//args fbUser
       //TODO: this allows any user to request any other user's profile
       // it should be secured to only get matches' profiles, but that would be
       // very difficult at this point
@@ -394,7 +407,7 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('open room', function(users) {
     console.info('received open request: Users: ', users);
-    facebookTokenValid(users.accessToken, function(user) {
+    facebookTokenValid(users.accessToken, function() {//args user
       console.info('opening room');
       openFirebaseRoomForUsers(users, socket);
     });
@@ -422,6 +435,7 @@ io.sockets.on('connection', function(socket) {
 });
 
 server.listen(httpPort, function() {
+  'use strict';
   console.log('socket.io server listening at %s, socket: %s', server.url, socketPort);
   console.timeEnd('loaded in: ');
 });
