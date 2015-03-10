@@ -11,22 +11,44 @@ matchMaker.isBlacklisted = function(interest, blacklist) {
   }
   return false;
 };
+
 matchMaker.populateMatchList = function(inUser, usersSnapshot) {
+
+  // inUser is the user for whom the match list is being created
+
+  if ((inUser.profile || {}).interests === undefined) {
+    //if the in user has no interests so, no matches
+    return;
+  }
+
+  //For every user
   usersSnapshot.forEach(function(userRef) {
     var user = userRef.val();
     var userId = user.id || user.data['user_id'];
-    if ((inUser.profile || {}).interests !== undefined) {
-      for (var ti = 0; ti < inUser.profile.interests.length; ti++) {
-        var interest = inUser.profile.interests[ti];
-        if (String(inUser.data['user_id']) !== String(userId)) {
-          //Skip yourself son
-          delete inUser.profile.rooms;
-          var profile = {
-            id: String(userId),
-            profile: (user.profile || null)
-          };
-          var blacklisted = matchMaker.isBlacklisted(interest, (inUser.profile.blacklist || []));
-          if (!blacklisted) {
+
+    //for every inUser interest
+    for (var ti = inUser.profile.interests.length - 1; ti >= 0; ti--) {
+      var interest = inUser.profile.interests[ti]
+
+      //Skip yourself son
+      if (String(inUser.data['user_id']) !== String(userId)) {
+
+        //check if the user is blacklisted, it wont matter for which categories if its already blacklisted;
+        var blacklisted = matchMaker.isBlacklisted(interest, (inUser.profile.blacklist || []));
+        if (!blacklisted) {
+
+          if (((user.profile || {}).interests || []).indexOf(interest) !== -1) {
+
+            //hide the others rooms from the match list results, for privacy conserns
+            delete inUser.profile.rooms;
+
+            //create a minimal profile from user
+            var profile = {
+              id: String(userId),
+              profile: (user.profile || null)
+            };
+
+            //match maker topic creation
             if (matchMaker.matchList[interest] === undefined) {
               matchMaker.matchList[interest] = [
                 profile
@@ -37,19 +59,21 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
           }
         }
       }
-    } else {
-      if (String(inUser.id) !== String(userId) && inUser.includeNoMatches === true) {
-        var match = {
-            id:String(user.id || user.data['user_id']),
-            profile:(user.profile || null)
-          }
-        if (matchMaker.matchList['no-topic'] === undefined) {
-          matchMaker.matchList['no-topic'] = [match];
-        } else {
-          matchMaker.matchList['no-topic'].push(match);
-        }
-      }
-    }
+    }//end inUser interests
+
+    //if the inUser is not the interest-user
+    var isInUser = String(inUser.id) !== String(userId);
+    if (isInUser && inUser.includeNoMatches === true) {
+       var match = {
+           id:String(user.id || user.data['user_id']),
+           profile:(user.profile || null)
+         }
+       if (matchMaker.matchList['no-topic'] === undefined) {
+         matchMaker.matchList['no-topic'] = [match];
+       } else {
+         matchMaker.matchList['no-topic'].push(match);
+       }
+     }
   });
 };
 matchMaker.blacklistMatchList = function(user) {
