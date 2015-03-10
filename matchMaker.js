@@ -93,7 +93,7 @@ matchMaker.blacklistMatchList = function(user) {
         var itIsBlacklisted = false;
         for (var i = matchesForTopic.length - 1; i >= 0; i--) {
           var matchForTopic = matchesForTopic[i];
-          if(String(user.id) === String(matchForTopic)){
+          if (String(user.id) === String(matchForTopic)) {
             itIsBlacklisted = true;
           }
           //go through the matched topic's user ids
@@ -121,5 +121,4 @@ matchMaker.getMatchList = function(user, usersSnapshot) {
   return matchMaker.matchList;
 };
 
-
-module.exports=matchMaker;
+module.exports = matchMaker;

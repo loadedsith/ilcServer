@@ -32,11 +32,11 @@ var herokuOrFileEnv = function(name) {
   'use strict';
   var anEnvVar;
   var fromFile = false;
-  try{
+  try {
     var anEnvVarFile = fs.readFileSync(__dirname + '/' + name).toString().split('\n');
     anEnvVar = anEnvVarFile[0];
     fromFile = true;
-  }catch(e){
+  } catch (e) {
     anEnvVar = process.env[name];
   }
   var whereFrom = fromFile ? 'fromFile' : 'fromHeroku';
@@ -51,7 +51,6 @@ var herokuOrFileEnv = function(name) {
 var firebaseUrl = herokuOrFileEnv('firebaseUrl');
 var appSecret = herokuOrFileEnv('fbAppSecret');
 var appId = herokuOrFileEnv('fbAppId');
-
 
 var roomsRef = new firebase(firebaseUrl + '/rooms/');
 
@@ -91,7 +90,7 @@ var pipeFirebaseToSocket = function(user, socket) {
   if (user.rooms !== undefined) {
     for (var i = user.rooms.length - 1; i >= 0; i--) {
       var room = user.rooms[i];
-      var roomName = makeRoomPairName(userId,room);
+      var roomName = makeRoomPairName(userId, room);
       createRoomEmitsForUserOnSocket(roomName, userId, socket);
     }
   } else {
@@ -196,12 +195,12 @@ var updateUser = function(user, socket) {
         // topics:[]
       };
 
-      usersRef.child(user.data['user_id']).set(user,function(err) {
-        console.info('created user'+user.data['user_id']);
-        if(err !== null){
+      usersRef.child(user.data['user_id']).set(user, function(err) {
+        console.info('created user' + user.data['user_id']);
+        if (err !== null) {
           console.warn('Failed creating user [' + user.data['user_id'] + ']. err status:', err);
         }
-        updateUser(user,socket);
+        updateUser(user, socket);
       });
       //function re-called after user is successfully created
       return;
@@ -225,7 +224,7 @@ var getUserProfile = function(request, socket, callback) {
   var user;
   if (request.data !== undefined) {
     user = request.data['user_id'];
-  }else{
+  } else {
     user = request.user;
   }
   usersRef.child(user).once('value', function(snapshot) {
@@ -236,8 +235,8 @@ var getUserProfile = function(request, socket, callback) {
     if (value === null || value === undefined) {
       console.warn(' user not found, emit null user profile');
       socket.emit('user profile', {});
-    }else{
-      if(value.profile === undefined){
+    } else {
+      if (value.profile === undefined) {
         value.profile = {
           'aboutMe' : '',
           'blacklist' : [ ],
@@ -245,7 +244,7 @@ var getUserProfile = function(request, socket, callback) {
           'id' : user,
           'interests' : [ ],
           'name' : '',
-          'test1:':Math.floor(Math.random()*1000)
+          'test1:':Math.floor(Math.random() * 1000)
         };
       }
       socket.emit('user profile', (value || {}));
@@ -260,11 +259,11 @@ var getUserProfile = function(request, socket, callback) {
 var setUserProfile = function(user, socket) {
   'use strict';
   var profile = user.user.profile;
-  if((profile||{}).name !== undefined){
+  if ((profile || {}).name !== undefined) {
     usersRef.child(user.user.data['user_id']).child('profile').set(profile, function(error) {
       socket.emit('user profile update', profile || error);
     });
-  }else{
+  } else {
     console.warn('couldnt update user profile, as profile was unset');
   }
 };
@@ -274,7 +273,7 @@ var sendMessage = function(user, room, message, socket) {
   console.info('Send Message: room, message', room, message);
   console.dir([room, message]);
   var roomName = makeRoomPairName(user.data['user_id'], room);
-  if(message!==undefined){
+  if (message !== undefined) {
     var messageObject = {
       date: new Date().getTime(),
       user:user,
@@ -293,7 +292,7 @@ var sendMessage = function(user, room, message, socket) {
 
 var getUserMatches = function(user, socket) {
   'use strict';
-  usersRef.on('value',function(usersSnapshot) {
+  usersRef.on('value', function(usersSnapshot) {
     var matchList = matchMaker.getMatchList(user, usersSnapshot);
     socket.emit('got user matchList', matchList);
   });
@@ -301,21 +300,25 @@ var getUserMatches = function(user, socket) {
 
 var closeRoom = function(config, user, socket) {
   'use strict';
-  console.info('closing room',config);
+  console.info('closing room', config);
   usersRef.child(user.data['user_id']).child('profile').child('rooms').once('value', function(snap) {
     var rooms = snap.val();
     var removeThisOne;
     if (rooms !== undefined && rooms !== null) {
       for (var i = rooms.length - 1; i >= 0; i--) {
-        if (rooms[i]===config.room){
+        if (rooms[i] === config.room) {
           removeThisOne = i;
         }
       }
       rooms.splice(removeThisOne, 1);
-      usersRef.child(user.data['user_id']).child('profile').child('rooms').set(rooms,function(results) {
-        console.info('room removed', config.room, results);
-        socket.emit('room removed', config.room, results);
-      });
+      usersRef
+        .child(user.data['user_id'])
+        .child('profile')
+        .child('rooms')
+        .set(rooms, function(results) {
+          console.info('room removed', config.room, results);
+          socket.emit('room removed', config.room, results);
+        });
     }
   });
 };
@@ -324,12 +327,17 @@ var setCurrentInterest = function(user, interest, socket) {
   'use strict';
   console.info('set currentInterest, interest-in:', interest);
   console.info('set currentInterest, user-in:', user);
-  if(interest !== undefined){
-    usersRef.child(user.data['user_id']).child('profile').child('currentInterest').set(interest, function(error) {
-      console.info('updated currentInterest', interest || error);
-      socket.emit('user current interest update', interest || error);
-    });
-  }else{
+  if (interest !== undefined) {
+    usersRef
+      .child(user.data['user_id'])
+      .child('profile')
+      .child('currentInterest')
+      .set(interest, function(error) {
+        console.info('updated currentInterest', interest || error);
+        socket.emit('user current interest update', interest || error);
+      });
+
+  } else {
     console.warn('couldnt set currentInterest, as it was unset: ', interest);
   }
 };
@@ -337,28 +345,28 @@ var setCurrentInterest = function(user, interest, socket) {
 io.sockets.on('connection', function(socket) {
   'use strict';
   var socketId = socket.id;
-  console.warn('new connection, id: ',socketId);
+  console.warn('new connection, id: ', socketId);
 
-  socket.on('disconnectMe', function () {
+  socket.on('disconnectMe', function() {
     console.info('disconnected user socketId' + socketId);
     socket.disconnect();
   });
 
   socket.on('set current interest', function(config) {
-    var interest = (((config||{}).user || {}).profile||{}).currentInterest;
-    if (interest !== undefined){
+    var interest = (((config || {}).user || {}).profile || {}).currentInterest;
+    if (interest !== undefined) {
       facebookTokenValid(config.accessToken, function(user) {
         setCurrentInterest(user, interest, socket);
       });
-    }else{
+    } else {
       console.warn('interest was undefined');
     }
   });
   socket.on('ping', function(data) {
-    if(data){
+    if (data) {
       data.signed = 'gph';
-    }else{
-      data = {signed:'gph'};
+    } else {
+      data = {signed: 'gph'};
     }
     console.log('ping', data);
     console.info('received ping', data);
@@ -418,7 +426,7 @@ io.sockets.on('connection', function(socket) {
     facebookTokenValid(accessToken, function(user) {
       if (socket.isLoggedIn === true) {
         console.log('user is already logged in?');
-      }else{
+      } else {
         socket.isLoggedIn = true;
         user.includeNoMatches = false;
         socket.emit('user valid', user);
