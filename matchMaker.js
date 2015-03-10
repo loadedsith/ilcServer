@@ -40,7 +40,7 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
           if (((user.profile || {}).interests || []).indexOf(interest) !== -1) {
 
             //hide the others rooms from the match list results, for privacy conserns
-            delete inUser.profile.rooms;
+            delete user.profile.rooms;
 
             //create a minimal profile from user
             var profile = {
@@ -48,13 +48,26 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
               profile: (user.profile || null)
             };
 
-            //match maker topic creation
-            if (matchMaker.matchList[interest] === undefined) {
-              matchMaker.matchList[interest] = [
-                profile
-              ];
-            } else {
-              matchMaker.matchList[interest].push(profile);
+            //check if the room is already opened.
+            var roomAlreadyOpen = false;
+            if (inUser.profile.rooms!==undefined){
+              var rooms = inUser.profile.rooms;
+              if (rooms.indexOf !== undefined){
+                if (rooms.indexOf(userId) === -1) {
+                  roomAlreadyOpen = true;
+                }
+              }
+            }
+
+            if (roomAlreadyOpen === false) {
+              //match maker topic creation
+              if (matchMaker.matchList[interest] === undefined) {
+                matchMaker.matchList[interest] = [
+                  profile
+                ];
+              } else {
+                matchMaker.matchList[interest].push(profile);
+              }
             }
           }
         }
@@ -76,6 +89,7 @@ matchMaker.populateMatchList = function(inUser, usersSnapshot) {
     }
   });
 };
+
 matchMaker.blacklistMatchList = function(user) {
   'use strict';
   var topics = (user.topics || ['debug topics']);
